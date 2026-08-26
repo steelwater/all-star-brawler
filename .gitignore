@@ -1,0 +1,22 @@
+# Godot 4 generated files
+.godot/
+
+# Exported builds and packages
+builds/
+exports/
+*.pck
+*.zip
+
+# Local environment files
+.env
+.env.*
+
+# Operating system metadata
+.DS_Store
+Thumbs.db
+
+# Editor metadata
+.idea/
+.vscode/
+*.swp
+*~
