@@ -1,0 +1,31 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://characters/fighter.gd" id="1_fighter"]
+[ext_resource type="AudioStream" path="res://audio/block.wav" id="2_block"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_body"]
+radius = 22.0
+height = 96.0
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_fighter"]
+friction = 0.9
+bounce = 0.0
+
+[node name="Fighter" type="CharacterBody2D"]
+collision_layer = 2
+collision_mask = 1
+floor_stop_on_slope = true
+floor_snap_length = 8.0
+physics_material_override = SubResource("PhysicsMaterial_fighter")
+script = ExtResource("1_fighter")
+block_sound = ExtResource("2_block")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -2)
+shape = SubResource("CapsuleShape2D_body")
+
+[node name="WeaponMount" type="Node2D" parent="."]
+position = Vector2(20, -24)
+
+[node name="BlockPlayer" type="AudioStreamPlayer" parent="."]
+volume_db = -5.0
