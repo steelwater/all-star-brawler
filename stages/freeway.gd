@@ -1,6 +1,9 @@
 class_name FreewayStage
 extends Node2D
 
+const ROAD_SURFACE_Y := 690.0
+const ROAD_DRAIN_Y := 590.0
+
 var elapsed := 0.0
 var scroll_offset := 0.0
 var cars: Array[AnimatableBody2D] = []
@@ -8,6 +11,7 @@ var car_origins: Array[Vector2] = []
 
 
 func _ready() -> void:
+	_create_road()
 	_create_car(Vector2(350, 550), Vector2(330, 64), Color("d9475f"))
 	_create_car(Vector2(900, 550), Vector2(350, 64), Color("3d86d8"))
 	queue_redraw()
@@ -26,11 +30,34 @@ func get_spawn_points() -> Array[Vector2]:
 	return [Vector2(350, 450), Vector2(900, 450)]
 
 
+func is_drain_zone(point: Vector2) -> bool:
+	return point.y >= ROAD_DRAIN_Y
+
+
+func _create_road() -> void:
+	_add_static_rect(Vector2(640, ROAD_SURFACE_Y), Vector2(1400, 52))
+	_add_static_rect(Vector2(-24, 360), Vector2(48, 720))
+	_add_static_rect(Vector2(1304, 360), Vector2(48, 720))
+
+
+func _add_static_rect(body_position: Vector2, size: Vector2) -> void:
+	var body := StaticBody2D.new()
+	body.position = body_position
+	body.collision_layer = 1
+	body.collision_mask = 6
+	var shape := CollisionShape2D.new()
+	var rectangle := RectangleShape2D.new()
+	rectangle.size = size
+	shape.shape = rectangle
+	body.add_child(shape)
+	add_child(body)
+
+
 func _create_car(car_position: Vector2, size: Vector2, color: Color) -> void:
 	var body := AnimatableBody2D.new()
 	body.position = car_position
 	body.collision_layer = 1
-	body.collision_mask = 2
+	body.collision_mask = 6
 	body.sync_to_physics = true
 
 	var shape := CollisionShape2D.new()
@@ -81,6 +108,7 @@ func _draw() -> void:
 		var height := 95.0 + float((index * 47) % 120)
 		draw_rect(Rect2(x, 350.0 - height, 115, height), Color("7097ae"))
 	draw_rect(Rect2(0, 360, 1280, 360), Color("303742"))
+	draw_rect(Rect2(0, ROAD_DRAIN_Y, 1280, 130), Color(0.45, 0.08, 0.08, 0.28))
 	for lane in [465.0, 650.0]:
 		for stripe in range(9):
 			var x := fmod(float(stripe) * 210.0 - scroll_offset + 1470.0, 1680.0) - 210.0
@@ -89,3 +117,4 @@ func _draw() -> void:
 		var y := 390.0 + float(streak) * 39.0
 		draw_line(Vector2(0, y), Vector2(1280, y), Color(1, 1, 1, 0.035), 3.0)
 	draw_string(ThemeDB.fallback_font, Vector2(48, 96), "FREEWAY TEST", HORIZONTAL_ALIGNMENT_LEFT, -1, 28, Color("203443"))
+	draw_string(ThemeDB.fallback_font, Vector2(470, 676), "DANGER — HEALTH DRAINS ON ROAD", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color("ffd8d8"))

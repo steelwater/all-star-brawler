@@ -12,11 +12,12 @@ The MVP is intended to answer three questions:
 
 The planned prototype uses **Godot 4.7.2 stable** and **GDScript**. Its intentionally narrow scope includes:
 
-- Two fighters with movement, jumping, attacking, defending, health, knockback, and round restart behavior
+- Two fighters with movement, jumping, ducking, attacks, kicks, taunts, health, knockback, and round restart behavior
 - A data-driven weapon slot with at least a sword and hammer
+- Reusable weapon throwing, thrown-weapon damage, and ground pickup
 - Weapon-specific hit sounds and a distinct block sound
 - A basic test arena
-- A moving-freeway stage with vehicle-roof platforms
+- A moving-freeway stage with vehicle-roof platforms and a damaging road below
 - Minimal health, restart, stage-selection, and weapon-test UI
 
 Creator tools, imported assets, armor, save files, networking, progression, mobile controls, and production packaging are outside this prototype.
@@ -35,8 +36,12 @@ The project uses only GDScript, built-in Godot nodes, generated placeholder soun
 | --- | --- | --- |
 | Move | `A` / `D` | `J` / `L` |
 | Jump | `W` | `I` |
+| Duck | `S` | `K` |
 | Attack | `F` | `O` |
 | Defend | `G` | `P` |
+| Kick | `H` | `M` |
+| Throw / pick up weapon | `Q` | `U` |
+| Taunt | `E` | `N` |
 | Swap weapon | `T` | `Y` |
 
 Additional test controls:
@@ -45,7 +50,9 @@ Additional test controls:
 - `2`: Load the freeway stage
 - `R`: Restart the round
 
-Falling from a stage or reaching zero health restarts the round automatically.
+Falling from the arena or reaching zero health restarts the round automatically. On the Freeway stage, a fighter who misses a car lands on the road. The road continuously drains health until the fighter returns to a car or is defeated.
+
+Walking and taunting use deliberately simple code-drawn prototype animation.
 
 ## Weapon architecture
 
@@ -73,7 +80,7 @@ Run the focused gameplay smoke test from the repository root:
 godot --headless --path . --script res://tests/smoke_test.gd
 ```
 
-It verifies fighter creation, default equipment, damage, knockback, defense, weapon exchange, stage switching, and the two moving freeway platforms.
+It verifies fighter creation, combat, ducking, kicking, weapon throwing and pickup, taunting, stage switching, moving freeway platforms, road landing, and road damage.
 
 ## Status
 

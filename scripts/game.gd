@@ -43,6 +43,8 @@ func load_stage(new_stage_index: int) -> void:
 	for fighter in fighters:
 		fighter.queue_free()
 	fighters.clear()
+	for world_weapon in get_tree().get_nodes_in_group("world_weapons"):
+		world_weapon.queue_free()
 	if current_stage != null:
 		current_stage.queue_free()
 
@@ -68,6 +70,7 @@ func _spawn_fighter(number: int, color: Color, starting_weapon: WeaponDefinition
 	fighter.starting_weapon = starting_weapon
 	fighter.health_changed.connect(_on_health_changed)
 	fighter.fell_out.connect(_on_fighter_fell)
+	fighter.weapon_changed.connect(_refresh_weapon_status)
 	add_child(fighter)
 	fighter.global_position = spawn_position
 	if number == 2:
@@ -79,9 +82,12 @@ func _swap_weapon(fighter_index: int) -> void:
 	if fighter_index >= fighters.size():
 		return
 	var fighter := fighters[fighter_index]
-	var next_weapon := HAMMER if fighter.weapon.definition.id == SWORD.id else SWORD
+	var next_weapon: WeaponDefinition
+	if fighter.weapon == null or fighter.weapon.definition == null:
+		next_weapon = SWORD if fighter_index == 0 else HAMMER
+	else:
+		next_weapon = HAMMER if fighter.weapon.definition.id == SWORD.id else SWORD
 	fighter.equip_weapon(next_weapon)
-	_refresh_weapon_status()
 
 
 func _refresh_weapon_status() -> void:

@@ -4,6 +4,7 @@
 [ext_resource type="AudioStream" path="res://audio/block.wav" id="2_block"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_body"]
+resource_local_to_scene = true
 radius = 22.0
 height = 96.0
 
@@ -13,7 +14,7 @@ bounce = 0.0
 
 [node name="Fighter" type="CharacterBody2D"]
 collision_layer = 2
-collision_mask = 1
+collision_mask = 5
 floor_stop_on_slope = true
 floor_snap_length = 8.0
 physics_material_override = SubResource("PhysicsMaterial_fighter")
