@@ -64,7 +64,7 @@ anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 24.0
-offset_top = -68.0
+offset_top = -100.0
 offset_right = -24.0
 offset_bottom = -18.0
 grow_horizontal = 2
@@ -74,7 +74,7 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.75)
 theme_override_constants/shadow_offset_x = 2
 theme_override_constants/shadow_offset_y = 2
 theme_override_font_sizes/font_size = 17
-text = "P1: A/D move  W jump  F attack  G defend    •    P2: J/L move  I jump  O attack  P defend\n1 Arena  •  2 Freeway  •  R Restart"
+text = "P1: A/D move  W jump  S duck  F attack  G defend  H kick  Q throw/pickup  E taunt\nP2: J/L move  I jump  K duck  O attack  P defend  M kick  U throw/pickup  N taunt\n1 Arena  •  2 Freeway  •  R Restart"
 
 [node name="WeaponStatus" type="Label" parent="HUD/SafeArea"]
 layout_mode = 1
@@ -83,7 +83,7 @@ anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 24.0
-offset_top = -68.0
+offset_top = -30.0
 offset_right = -24.0
 offset_bottom = -18.0
 grow_horizontal = 2
