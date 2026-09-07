@@ -15,27 +15,16 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="TopBar" type="HBoxContainer" parent="HUD/SafeArea"]
+[node name="TopBar" type="VBoxContainer" parent="HUD/SafeArea"]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
 offset_left = 24.0
-offset_top = 18.0
+offset_top = 16.0
 offset_right = -24.0
-offset_bottom = 56.0
+offset_bottom = 76.0
 grow_horizontal = 2
 alignment = 1
-theme_override_constants/separation = 48
-
-[node name="P1Health" type="Label" parent="HUD/SafeArea/TopBar"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.47, 0.76, 1, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
-theme_override_constants/shadow_offset_x = 2
-theme_override_constants/shadow_offset_y = 2
-theme_override_font_sizes/font_size = 24
-text = "P1 Health: 100"
 
 [node name="Stage" type="Label" parent="HUD/SafeArea/TopBar"]
 layout_mode = 2
@@ -44,18 +33,27 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
 theme_override_constants/shadow_offset_x = 2
 theme_override_constants/shadow_offset_y = 2
 theme_override_font_sizes/font_size = 22
-text = "Stage: Arena"
+text = "Arena  •  Free For All"
+horizontal_alignment = 1
 
-[node name="P2Health" type="Label" parent="HUD/SafeArea/TopBar"]
+[node name="Health" type="Label" parent="HUD/SafeArea/TopBar"]
 layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(1, 0.53, 0.53, 1)
+theme_override_colors/font_color = Color(0.85, 0.93, 1, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
 theme_override_constants/shadow_offset_x = 2
 theme_override_constants/shadow_offset_y = 2
-theme_override_font_sizes/font_size = 24
-text = "P2 Health: 100"
-horizontal_alignment = 2
+theme_override_font_sizes/font_size = 17
+text = "F1 T1: 100  •  F2 T2: 100"
+horizontal_alignment = 1
+
+[node name="SetupButton" type="Button" parent="HUD/SafeArea"]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 18.0
+offset_right = 174.0
+offset_bottom = 54.0
+mouse_filter = 0
+text = "Match Setup [Tab]"
 
 [node name="Help" type="Label" parent="HUD/SafeArea"]
 layout_mode = 1
@@ -73,8 +71,8 @@ theme_override_colors/font_color = Color(1, 1, 1, 0.78)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.75)
 theme_override_constants/shadow_offset_x = 2
 theme_override_constants/shadow_offset_y = 2
-theme_override_font_sizes/font_size = 17
-text = "P1: A/D move  W jump  S duck  F attack  G defend  H kick  Q throw/pickup  E taunt\nP2: J/L move  I jump  K duck  O attack  P defend  M kick  U throw/pickup  N taunt\n1 Arena  •  2 Freeway  •  R Restart"
+theme_override_font_sizes/font_size = 16
+text = "P1: A/D move  W jump  S duck  F attack  G defend  H kick  Q throw/pickup  E taunt\nP2: J/L move  I jump  K duck  O attack  P defend  M kick  U throw/pickup  N taunt\n1 Arena  •  2 Freeway  •  R Restart  •  Tab Match Setup"
 
 [node name="WeaponStatus" type="Label" parent="HUD/SafeArea"]
 layout_mode = 1
@@ -92,8 +90,8 @@ theme_override_colors/font_color = Color(1, 0.92, 0.65, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.75)
 theme_override_constants/shadow_offset_x = 2
 theme_override_constants/shadow_offset_y = 2
-theme_override_font_sizes/font_size = 17
-text = "Weapons  •  P1 [T]: Sword    P2 [Y]: Hammer"
+theme_override_font_sizes/font_size = 15
+text = "Weapons  •  F1 Sword    F2 Hammer"
 horizontal_alignment = 2
 
 [node name="RoundStatus" type="Label" parent="HUD/SafeArea"]

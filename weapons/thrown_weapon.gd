@@ -10,7 +10,7 @@ const MINIMUM_DAMAGE_SPEED := 180.0
 @onready var hit_player: AudioStreamPlayer2D = $HitPlayer
 
 var definition: WeaponDefinition
-var thrower_number := 0
+var thrower: Fighter
 var pickup_delay_remaining := PICKUP_DELAY
 var damage_available := true
 
@@ -26,9 +26,9 @@ func _physics_process(delta: float) -> void:
 		damage_available = false
 
 
-func configure(new_definition: WeaponDefinition, new_thrower_number: int, facing: float) -> void:
+func configure(new_definition: WeaponDefinition, new_thrower: Fighter, facing: float) -> void:
 	definition = new_definition
-	thrower_number = new_thrower_number
+	thrower = new_thrower
 	visual.configure(definition)
 	visual.hit_area.monitoring = false
 	hit_player.stream = definition.hit_sound
@@ -44,14 +44,19 @@ func is_available_to(player: Node2D) -> bool:
 
 
 func _on_body_entered(body: Node) -> void:
-	if not damage_available or not body is Fighter:
+	if not damage_available or not body is Fighter or not is_instance_valid(thrower):
 		return
-	if body.player_number == thrower_number and pickup_delay_remaining > 0.0:
+	if body == thrower and pickup_delay_remaining > 0.0:
 		return
 	var direction := signf(linear_velocity.x)
 	if is_zero_approx(direction):
 		direction = 1.0
-	body.receive_hit(definition.damage * 0.6, Vector2(direction * definition.knockback * 0.7, -definition.knockback * 0.2))
-	if definition.hit_sound != null:
+	var connected: bool = body.receive_hit(
+		definition.damage * 0.6,
+		Vector2(direction * definition.knockback * 0.7, -definition.knockback * 0.2),
+		thrower
+	)
+	if connected and definition.hit_sound != null:
 		hit_player.play()
-	damage_available = false
+	if connected:
+		damage_available = false

@@ -1,8 +1,8 @@
 class_name Fighter
 extends CharacterBody2D
 
-signal health_changed(player_number: int, health: float)
-signal fell_out(player_number: int)
+signal health_changed(fighter_id: int, health: float)
+signal defeated_changed(fighter_id: int)
 signal weapon_changed
 
 const WEAPON_SCENE := preload("res://weapons/weapon.tscn")
@@ -20,7 +20,8 @@ const ROAD_DAMAGE_PER_SECOND := 18.0
 const STANDING_HEIGHT := 96.0
 const DUCKING_HEIGHT := 58.0
 
-@export_range(1, 2) var player_number := 1
+@export_range(1, 8) var fighter_id := 1
+@export_range(1, 8) var team_id := 1
 @export var fighter_color := Color("4dabf7")
 @export var starting_weapon: WeaponDefinition
 @export var block_sound: AudioStream
@@ -29,6 +30,8 @@ const DUCKING_HEIGHT := 58.0
 @onready var block_player: AudioStreamPlayer = $BlockPlayer
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 
+var controller: FighterController
+var match_manager: MatchManager
 var health := MAX_HEALTH
 var facing := 1.0
 var is_defending := false
@@ -46,26 +49,44 @@ func _ready() -> void:
 	add_to_group("fighters")
 	block_player.stream = block_sound
 	equip_weapon(starting_weapon)
-	health_changed.emit(player_number, health)
+	health_changed.emit(fighter_id, health)
 	queue_redraw()
+
+
+func set_controller(new_controller: FighterController) -> void:
+	if controller != null and is_instance_valid(controller):
+		controller.queue_free()
+	controller = new_controller
+	if controller != null:
+		add_child(controller)
 
 
 func _physics_process(delta: float) -> void:
 	kick_cooldown_remaining = maxf(0.0, kick_cooldown_remaining - delta)
 	kick_flash_remaining = maxf(0.0, kick_flash_remaining - delta)
 	taunt_remaining = maxf(0.0, taunt_remaining - delta)
-
 	if not is_on_floor():
 		velocity.y += gravity * delta
+	var command := FighterCommand.new()
+	if controller != null:
+		command = controller.get_command(delta)
+	_apply_command(command, delta)
+	weapon_mount.scale.x = facing
+	move_and_slide()
+	_apply_stage_hazard(delta)
+	queue_redraw()
+	if global_position.y > 820.0 and not _is_freeway_stage():
+		defeat()
 
+
+func _apply_command(command: FighterCommand, delta: float) -> void:
 	var can_ground_action := is_on_floor() and taunt_remaining <= 0.0
-	is_ducking = Input.is_action_pressed(_action("duck")) and can_ground_action
-	is_defending = Input.is_action_pressed(_action("defend")) and can_ground_action and not is_ducking
+	is_ducking = command.duck and can_ground_action
+	is_defending = command.defend and can_ground_action and not is_ducking
 	_update_collision_shape()
-	var direction := Input.get_axis(_action("left"), _action("right"))
+	var direction := clampf(command.move_axis, -1.0, 1.0)
 	if is_defending or is_ducking or taunt_remaining > 0.0:
 		direction = 0.0
-
 	if not is_zero_approx(direction):
 		facing = signf(direction)
 		var control := 1.0 if is_on_floor() else AIR_CONTROL
@@ -74,27 +95,16 @@ func _physics_process(delta: float) -> void:
 			walk_phase = fmod(walk_phase + absf(velocity.x) * delta * 0.045, TAU)
 	else:
 		velocity.x = move_toward(velocity.x, 0.0, MOVE_SPEED * 7.0 * delta)
-
-	if Input.is_action_just_pressed(_action("jump")) and can_ground_action and not is_defending and not is_ducking:
+	if command.jump and can_ground_action and not is_defending and not is_ducking:
 		velocity.y = JUMP_VELOCITY
-
-	if Input.is_action_just_pressed(_action("attack")) and not is_defending and not is_ducking and taunt_remaining <= 0.0 and weapon != null:
+	if command.attack and not is_defending and not is_ducking and taunt_remaining <= 0.0 and weapon != null:
 		weapon.try_attack(self, facing)
-	if Input.is_action_just_pressed(_action("kick")) and not is_defending and not is_ducking and taunt_remaining <= 0.0:
+	if command.kick and not is_defending and not is_ducking and taunt_remaining <= 0.0:
 		_try_kick()
-	if Input.is_action_just_pressed(_action("weapon_action")) and not is_defending and taunt_remaining <= 0.0:
+	if command.weapon_action and not is_defending and taunt_remaining <= 0.0:
 		_throw_or_pickup_weapon()
-	if Input.is_action_just_pressed(_action("taunt")) and can_ground_action and not is_defending and not is_ducking:
+	if command.taunt and can_ground_action and not is_defending and not is_ducking:
 		_start_taunt()
-
-	weapon_mount.scale.x = facing
-	move_and_slide()
-	_apply_stage_hazard(delta)
-	queue_redraw()
-
-	if global_position.y > 820.0 and not _is_freeway_stage():
-		fell_out.emit(player_number)
-		set_physics_process(false)
 
 
 func equip_weapon(new_definition: WeaponDefinition) -> void:
@@ -113,9 +123,11 @@ func get_weapon_name() -> String:
 	return weapon.definition.display_name
 
 
-func receive_hit(damage: float, knockback: Vector2) -> void:
+func receive_hit(damage: float, knockback: Vector2, attacker: Fighter = null) -> bool:
 	if defeated:
-		return
+		return false
+	if attacker != null and match_manager != null and not match_manager.can_damage(attacker, self):
+		return false
 	var final_damage := damage
 	var final_knockback := knockback
 	if is_defending:
@@ -123,26 +135,34 @@ func receive_hit(damage: float, knockback: Vector2) -> void:
 		final_knockback *= 0.25
 		if block_sound != null:
 			block_player.play()
-
 	velocity = final_knockback
 	_apply_damage(final_damage)
+	return true
 
 
 func receive_environment_damage(damage: float) -> void:
 	_apply_damage(damage)
 
 
+func defeat() -> void:
+	if defeated:
+		return
+	defeated = true
+	set_physics_process(false)
+	collision_layer = 0
+	collision_mask = 0
+	visible = false
+	defeated_changed.emit(fighter_id)
+
+
 func _apply_damage(damage: float) -> void:
 	if defeated:
 		return
 	health = maxf(0.0, health - damage)
-	health_changed.emit(player_number, health)
+	health_changed.emit(fighter_id, health)
 	queue_redraw()
-
 	if health <= 0.0:
-		defeated = true
-		fell_out.emit(player_number)
-		set_physics_process(false)
+		defeat()
 
 
 func _try_kick() -> bool:
@@ -156,8 +176,7 @@ func _try_kick() -> bool:
 			continue
 		var offset: Vector2 = candidate.global_position - global_position
 		if absf(offset.y) <= 62.0 and offset.x * facing > 0.0 and offset.length() <= KICK_RANGE:
-			candidate.receive_hit(KICK_DAMAGE, Vector2(facing * KICK_KNOCKBACK, -KICK_KNOCKBACK * 0.22))
-			connected = true
+			connected = candidate.receive_hit(KICK_DAMAGE, Vector2(facing * KICK_KNOCKBACK, -KICK_KNOCKBACK * 0.22), self) or connected
 	return connected
 
 
@@ -171,12 +190,11 @@ func _throw_or_pickup_weapon() -> void:
 		var thrown := THROWN_WEAPON_SCENE.instantiate()
 		get_parent().add_child(thrown)
 		thrown.global_position = global_position + Vector2(facing * 44.0, -30.0)
-		thrown.configure(weapon.definition, player_number, facing)
+		thrown.configure(weapon.definition, self, facing)
 		weapon.queue_free()
 		weapon = null
 		weapon_changed.emit()
 		return
-
 	var nearest: Node2D
 	var nearest_distance := PICKUP_RADIUS
 	for candidate in get_tree().get_nodes_in_group("world_weapons"):
@@ -217,10 +235,6 @@ func _get_current_stage() -> Node:
 
 func _is_freeway_stage() -> bool:
 	return _get_current_stage() is FreewayStage
-
-
-func _action(suffix: String) -> StringName:
-	return StringName("p%d_%s" % [player_number, suffix])
 
 
 func _draw() -> void:

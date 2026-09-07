@@ -32,22 +32,17 @@ func configure(new_definition: WeaponDefinition) -> void:
 func try_attack(attacker: Fighter, facing: float) -> bool:
 	if definition == null or cooldown_remaining > 0.0:
 		return false
-
 	cooldown_remaining = definition.cooldown
 	attack_flash_remaining = 0.12
-
 	var connected := false
 	for body in hit_area.get_overlapping_bodies():
 		if body == attacker or not body is Fighter:
 			continue
 		var knockback := Vector2(facing * definition.knockback, -definition.knockback * 0.35)
-		body.receive_hit(definition.damage, knockback)
-		connected = true
-
+		connected = body.receive_hit(definition.damage, knockback, attacker) or connected
 	if connected and definition.hit_sound != null:
 		hit_player.stream = definition.hit_sound
 		hit_player.play()
-
 	return true
 
 
@@ -67,13 +62,9 @@ func _draw() -> void:
 	var color := definition.visual_color
 	if attack_flash_remaining > 0.0:
 		color = color.lightened(0.35)
-
 	if definition.visual_shape == &"hammer":
 		draw_rect(Rect2(0, -3, definition.visual_size.x * 0.72, 6), Color("8b5e3c"))
-		draw_rect(
-			Rect2(definition.visual_size.x * 0.55, -definition.visual_size.y * 0.5, definition.visual_size.x * 0.45, definition.visual_size.y),
-			color
-		)
+		draw_rect(Rect2(definition.visual_size.x * 0.55, -definition.visual_size.y * 0.5, definition.visual_size.x * 0.45, definition.visual_size.y), color)
 	else:
 		draw_rect(Rect2(0, -3, definition.visual_size.x * 0.3, 6), Color("8b5e3c"))
 		var blade := PackedVector2Array([
@@ -84,6 +75,5 @@ func _draw() -> void:
 			Vector2(definition.visual_size.x * 0.25, definition.visual_size.y * 0.5),
 		])
 		draw_colored_polygon(blade, color)
-
 	if attack_flash_remaining > 0.0:
 		draw_arc(Vector2.ZERO, definition.attack_offset, -0.75, 0.75, 16, Color(1, 1, 1, 0.65), 4.0)
