@@ -124,6 +124,13 @@ func _run() -> void:
 	_check(freeway_fighter.is_on_floor(), "a fighter who leaves a freeway car lands on the road")
 	_check(freeway_fighter.health < health_before_road, "standing on the freeway road continuously drains health")
 
+	freeway_fighter.health = Fighter.MAX_HEALTH
+	freeway_fighter.velocity.x = 145.0
+	var horizontal_velocity_before_drain := freeway_fighter.velocity.x
+	freeway_fighter._apply_stage_hazard(0.25)
+	_check(freeway_fighter.health < Fighter.MAX_HEALTH, "a freeway drain tick removes health")
+	_check(is_equal_approx(freeway_fighter.velocity.x, horizontal_velocity_before_drain), "freeway road damage preserves horizontal velocity")
+
 	current_scene = null
 	root.remove_child(game)
 	game.free()

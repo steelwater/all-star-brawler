@@ -113,19 +113,29 @@ func get_weapon_name() -> String:
 	return weapon.definition.display_name
 
 
-func receive_hit(damage: float, knockback: Vector2, ignores_defense := false) -> void:
+func receive_hit(damage: float, knockback: Vector2) -> void:
 	if defeated:
 		return
 	var final_damage := damage
 	var final_knockback := knockback
-	if is_defending and not ignores_defense:
+	if is_defending:
 		final_damage *= 0.2
 		final_knockback *= 0.25
 		if block_sound != null:
 			block_player.play()
 
-	health = maxf(0.0, health - final_damage)
 	velocity = final_knockback
+	_apply_damage(final_damage)
+
+
+func receive_environment_damage(damage: float) -> void:
+	_apply_damage(damage)
+
+
+func _apply_damage(damage: float) -> void:
+	if defeated:
+		return
+	health = maxf(0.0, health - damage)
 	health_changed.emit(player_number, health)
 	queue_redraw()
 
@@ -195,7 +205,7 @@ func _update_collision_shape() -> void:
 func _apply_stage_hazard(delta: float) -> void:
 	var stage := _get_current_stage()
 	if stage != null and stage.has_method("is_drain_zone") and stage.is_drain_zone(global_position) and is_on_floor():
-		receive_hit(ROAD_DAMAGE_PER_SECOND * delta, Vector2.ZERO, true)
+		receive_environment_damage(ROAD_DAMAGE_PER_SECOND * delta)
 
 
 func _get_current_stage() -> Node:
