@@ -18,6 +18,43 @@ func _check(condition: bool, message: String) -> void:
 		push_error("FAIL: %s" % message)
 
 
+func _key_event(keycode: Key, pressed: bool) -> InputEventKey:
+	var event := InputEventKey.new()
+	event.physical_keycode = keycode
+	event.pressed = pressed
+	return event
+
+
+func _send_key(keycode: Key, pressed: bool) -> void:
+	Input.parse_input_event(_key_event(keycode, pressed))
+
+
+func _settle_on_floor(fighter: Fighter) -> void:
+	for frame in range(30):
+		await physics_frame
+		if fighter.is_on_floor():
+			return
+
+
+func _arena_spawn_is_clear(stage: ArenaStage, fighter: Fighter, spawn: Vector2) -> bool:
+	var capsule := fighter.collision_shape.shape as CapsuleShape2D
+	var fighter_size := Vector2(capsule.radius * 2.0, capsule.height)
+	var fighter_rect := Rect2(spawn + fighter.collision_shape.position - fighter_size * 0.5, fighter_size)
+	for child in stage.get_children():
+		if not child is StaticBody2D:
+			continue
+		for body_child in child.get_children():
+			if not body_child is CollisionShape2D:
+				continue
+			var rectangle := body_child.shape as RectangleShape2D
+			if rectangle == null:
+				continue
+			var platform_rect := Rect2(body_child.global_position - rectangle.size * 0.5, rectangle.size)
+			if fighter_rect.intersects(platform_rect):
+				return false
+	return true
+
+
 func _make_slots(count: int, control_type: int, team_size := 1) -> Array[FighterSlotConfig]:
 	var slots: Array[FighterSlotConfig] = []
 	var colors := [
@@ -51,8 +88,64 @@ func _run() -> void:
 	_check(game.fighters.size() == 2, "the arena preserves the two-human default match")
 	_check(game.fighters[0].controller is HumanFighterController, "a human slot receives the shared human controller")
 	_check(game.fighters[1].controller is HumanFighterController, "fighter two can independently use human control")
+	_check(game.version_label.text == "v%s" % ProjectSettings.get_setting("application/config/version"), "the main HUD displays the centrally configured build version")
 	_check(game.fighters[0].get_weapon_name() == "Sword", "fighter one keeps the sword loadout")
 	_check(game.fighters[1].get_weapon_name() == "Hammer", "fighter two keeps the hammer loadout")
+	var displayed_keyboard_actions := {
+		"p1_left": KEY_A, "p1_right": KEY_D, "p1_jump": KEY_W, "p1_crouch": KEY_S,
+		"p1_attack": KEY_F, "p1_defend": KEY_G, "p1_kick": KEY_H, "p1_weapon_action": KEY_Q, "p1_taunt": KEY_E,
+		"p2_left": KEY_J, "p2_right": KEY_L, "p2_jump": KEY_I, "p2_crouch": KEY_K,
+		"p2_attack": KEY_O, "p2_defend": KEY_P, "p2_kick": KEY_M, "p2_weapon_action": KEY_U, "p2_taunt": KEY_N,
+		"restart_round": KEY_R, "arena_stage": KEY_1, "freeway_stage": KEY_2,
+		"swap_p1_weapon": KEY_T, "swap_p2_weapon": KEY_Y,
+	}
+	for action in displayed_keyboard_actions:
+		var event := _key_event(displayed_keyboard_actions[action], true)
+		_check(InputMap.event_is_action(event, action), "%s accepts its displayed physical keyboard key" % action)
+	var arena: ArenaStage = game.current_stage
+	for spawn in arena.get_spawn_points():
+		_check(_arena_spawn_is_clear(arena, game.fighters[0], spawn), "an Arena spawn has clearance from every platform")
+	await _settle_on_floor(game.fighters[0])
+	var fighter_one_start_x: float = game.fighters[0].global_position.x
+	_send_key(KEY_A, true)
+	for frame in range(8):
+		await physics_frame
+	var fighter_one_moved_left: bool = game.fighters[0].velocity.x < 0.0 and game.fighters[0].global_position.x < fighter_one_start_x
+	_send_key(KEY_A, false)
+	await physics_frame
+	_check(fighter_one_moved_left, "P1 can move immediately from the Arena start using the displayed A key")
+	_send_key(KEY_TAB, true)
+	await process_frame
+	_send_key(KEY_TAB, false)
+	await process_frame
+	_check(game.setup_panel.visible and paused, "Tab opens Match Setup and pauses gameplay")
+	var paused_position: Vector2 = game.fighters[0].global_position
+	_send_key(KEY_A, true)
+	for frame in range(4):
+		await process_frame
+	_send_key(KEY_A, false)
+	await process_frame
+	_check(game.fighters[0].global_position.is_equal_approx(paused_position), "gameplay stays paused while Match Setup is open")
+	_send_key(KEY_TAB, true)
+	await process_frame
+	_send_key(KEY_TAB, false)
+	await process_frame
+	_check(not game.setup_panel.visible and not paused, "Tab closes Match Setup while paused")
+	fighter_one_start_x = game.fighters[0].global_position.x
+	Input.action_press("p1_right")
+	for frame in range(12):
+		await physics_frame
+	var fighter_one_resumed_right: bool = game.fighters[0].velocity.x > 0.0
+	Input.action_release("p1_right")
+	await physics_frame
+	_check(fighter_one_resumed_right, "keyboard movement resumes after Match Setup closes")
+	var fighter_two_start_x: float = game.fighters[1].global_position.x
+	_send_key(KEY_L, true)
+	for frame in range(4):
+		await physics_frame
+	_send_key(KEY_L, false)
+	await physics_frame
+	_check(game.fighters[1].global_position.x > fighter_two_start_x, "P2 can move using the displayed L key")
 	var first_setup_row: Dictionary = game.setup_rows[0]
 	var first_control: OptionButton = first_setup_row["control"]
 	var first_difficulty: OptionButton = first_setup_row["difficulty"]
@@ -62,6 +155,15 @@ func _run() -> void:
 	first_control.select(FighterSlotConfig.ControlType.HUMAN)
 	game._refresh_setup_row(first_setup_row)
 	_check(not first_difficulty.visible, "CPU difficulty stays hidden for human control")
+	_check(game.friendly_fire_toggle.text == "Hit Teammates", "the team damage option uses child-friendly wording")
+	_check(not game.team_heading.visible and not first_setup_row["team"].visible and not game.friendly_fire_toggle.visible, "team fields stay hidden in Free For All")
+	_check(game.setup_grid.columns == 4, "Free For All keeps the setup grid aligned without the Team column")
+	game.mode_selector.select(MatchManager.MatchMode.TEAM_BATTLE)
+	game._refresh_setup_mode()
+	_check(game.team_heading.visible and first_setup_row["team"].visible and game.friendly_fire_toggle.visible, "Team Battle reveals its team fields")
+	_check(game.setup_grid.columns == 5, "Team Battle restores the Team column")
+	game.mode_selector.select(MatchManager.MatchMode.FREE_FOR_ALL)
+	game._refresh_setup_mode()
 
 	var easy := CpuProfile.for_difficulty(FighterSlotConfig.CpuDifficulty.EASY)
 	var medium := CpuProfile.for_difficulty(FighterSlotConfig.CpuDifficulty.MEDIUM)
@@ -75,13 +177,34 @@ func _run() -> void:
 	fighter_two.global_position = Vector2(640, 510)
 	fighter_one.velocity = Vector2.ZERO
 	fighter_two.velocity = Vector2.ZERO
-	for frame in range(3):
-		await physics_frame
+	await _settle_on_floor(fighter_one)
+	await _settle_on_floor(fighter_two)
 	Input.action_press("p1_attack")
 	await physics_frame
 	Input.action_release("p1_attack")
 	await physics_frame
 	_check(fighter_two.health < Fighter.MAX_HEALTH, "human commands still drive normal weapon combat")
+	_check(fighter_two.damage_flash_remaining > 0.0 and fighter_two.is_damage_blink_visible(), "taking a hit starts the recognizable damage blink")
+	_check(Fighter.DAMAGE_FLASH_COLOR != game.slot_configs[1].fighter_color, "the damage red differs from the red fighter color")
+	fighter_two.damage_flash_elapsed = Fighter.DAMAGE_BLINK_INTERVAL + 0.01
+	_check(not fighter_two.is_damage_blink_visible(), "the damage feedback visibly alternates instead of staying solid red")
+	var elapsed_before_continuous_damage := fighter_two.damage_flash_elapsed
+	fighter_two.receive_environment_damage(1.0)
+	_check(is_equal_approx(fighter_two.damage_flash_elapsed, elapsed_before_continuous_damage), "continuous damage extends the blink without freezing its pulse phase")
+	fighter_one.weapon.attack_flash_remaining = BrawlerWeapon.ATTACK_ANIMATION_DURATION * 0.5
+	fighter_one.weapon._update_attack_pose()
+	var sword_thrusts_forward := fighter_one.weapon.position.x > 0.0 and is_zero_approx(fighter_one.weapon.rotation)
+	_check(sword_thrusts_forward, "the sword attack animates as a forward thrust")
+	fighter_one.weapon.attack_flash_remaining = 0.0
+	fighter_one.weapon._update_attack_pose()
+	fighter_two.weapon.attack_flash_remaining = BrawlerWeapon.ATTACK_ANIMATION_DURATION
+	fighter_two.weapon._update_attack_pose()
+	var hammer_start_rotation := fighter_two.weapon.rotation
+	fighter_two.weapon.attack_flash_remaining = BrawlerWeapon.ATTACK_ANIMATION_DURATION * 0.25
+	fighter_two.weapon._update_attack_pose()
+	_check(hammer_start_rotation < -1.0 and fighter_two.weapon.rotation > hammer_start_rotation, "the hammer attack swings down from above")
+	fighter_two.weapon.attack_flash_remaining = 0.0
+	fighter_two.weapon._update_attack_pose()
 
 	fighter_two.health = Fighter.MAX_HEALTH
 	for frame in range(30):
@@ -96,12 +219,38 @@ func _run() -> void:
 	Input.action_release("p2_defend")
 	_check(fighter_two.health > 95.0, "shared commands preserve defensive damage reduction")
 
-	fighter_one.is_ducking = true
-	fighter_one._update_collision_shape()
-	var duck_shape := fighter_one.collision_shape.shape as CapsuleShape2D
-	_check(is_equal_approx(duck_shape.height, Fighter.DUCKING_HEIGHT), "ducking still shortens the fighter collision shape")
-	fighter_one.is_ducking = false
-	fighter_one._update_collision_shape()
+	fighter_one.taunt_remaining = 0.0
+	await _settle_on_floor(fighter_one)
+	_check(fighter_one.is_on_floor(), "P1 is grounded before stance input checks")
+	_check(fighter_one.controller is HumanFighterController, "P1 retains human input ownership before stance checks")
+	Input.action_press("p1_crouch")
+	await physics_frame
+	var crouch_shape := fighter_one.collision_shape.shape as CapsuleShape2D
+	_check(fighter_one.is_crouching, "the displayed S key activates P1 crouch")
+	_check(is_equal_approx(crouch_shape.height, Fighter.CROUCHING_HEIGHT), "crouching shortens the fighter collision shape")
+	_check(is_equal_approx(fighter_one.collision_shape.position.y + crouch_shape.height * 0.5, 46.0), "the crouching collision shape stays grounded")
+	_check(fighter_one.weapon_mount.position.is_equal_approx(Fighter.CROUCHING_WEAPON_MOUNT), "the crouching weapon pose moves down with the fighter")
+	fighter_one.kick_cooldown_remaining = 0.0
+	var crouching_kick := FighterCommand.new()
+	crouching_kick.crouch = true
+	crouching_kick.kick = true
+	fighter_one._apply_command(crouching_kick, 0.0)
+	_check(fighter_one.kick_flash_remaining > 0.0 and fighter_one.is_crouching, "a grounded crouching player can kick without standing up")
+	_check(is_equal_approx(absf(fighter_one.weapon_mount.rotation), PI * 0.5), "the crouching kick holds the weapon upright")
+	Input.action_release("p1_crouch")
+	await physics_frame
+	fighter_one.kick_cooldown_remaining = 0.0
+	Input.action_press("p1_kick")
+	await physics_frame
+	Input.action_release("p1_kick")
+	_check(fighter_one.kick_flash_remaining > 0.0 and not fighter_one.is_crouching, "a standing kick uses its distinct upright pose")
+	_check(is_equal_approx(absf(fighter_one.weapon_mount.rotation), PI * 0.5), "the standing kick holds the weapon upright")
+	Input.action_press("p1_taunt")
+	await physics_frame
+	_check(fighter_one.is_taunting and not fighter_one.weapon_mount.visible, "a held taunt hides the equipped weapon")
+	Input.action_release("p1_taunt")
+	await physics_frame
+	_check(not fighter_one.is_taunting and fighter_one.weapon_mount.visible, "releasing taunt restores the equipped weapon")
 	fighter_one.global_position = Vector2(560, 510)
 	fighter_two.global_position = Vector2(620, 510)
 	fighter_two.health = Fighter.MAX_HEALTH
@@ -125,6 +274,33 @@ func _run() -> void:
 		fighter_one._throw_or_pickup_weapon()
 		await process_frame
 		_check(fighter_one.get_weapon_name() == "Sword", "an unarmed fighter can still pick up any weapon")
+
+	var human_cpu_slots := _make_slots(2, FighterSlotConfig.ControlType.HUMAN)
+	human_cpu_slots[1].control_type = FighterSlotConfig.ControlType.CPU
+	game.configure_match(human_cpu_slots, MatchManager.MatchMode.FREE_FOR_ALL, false)
+	await process_frame
+	await physics_frame
+	_check(game.fighters[0].controller is HumanFighterController and game.fighters[1].controller is CpuFighterController, "P1 human and P2 CPU keep separate input ownership")
+	var cpu_human_slots := _make_slots(2, FighterSlotConfig.ControlType.HUMAN)
+	cpu_human_slots[0].control_type = FighterSlotConfig.ControlType.CPU
+	game.configure_match(cpu_human_slots, MatchManager.MatchMode.FREE_FOR_ALL, false)
+	await process_frame
+	await physics_frame
+	_check(game.fighters[0].controller is CpuFighterController and game.fighters[1].controller is HumanFighterController, "P1 CPU and P2 human keep separate input ownership")
+	var solo_team_slots := _make_slots(2, FighterSlotConfig.ControlType.CPU)
+	game.configure_match(solo_team_slots, MatchManager.MatchMode.TEAM_BATTLE, false)
+	await process_frame
+	await physics_frame
+	game.fighters[1].defeat()
+	await process_frame
+	_check(game.round_label.text.begins_with("Player 1 wins"), "a one-player-per-team battle announces the winning player")
+	_check(game.reset_pending and game.round_label.text.ends_with("press any key to restart"), "a completed match waits with a clear restart prompt")
+	var completed_round_generation: int = game.round_generation
+	_send_key(KEY_SPACE, true)
+	await process_frame
+	_send_key(KEY_SPACE, false)
+	await process_frame
+	_check(not game.reset_pending and game.round_generation == completed_round_generation + 1, "a fresh key press restarts the completed match")
 
 	var team_slots := _make_slots(4, FighterSlotConfig.ControlType.CPU, 2)
 	game.configure_match(team_slots, MatchManager.MatchMode.TEAM_BATTLE, false)
@@ -151,6 +327,7 @@ func _run() -> void:
 	game.fighters[3].defeat()
 	await process_frame
 	_check(game.match_manager.completed, "a 2 vs 2 team match completes when one team remains")
+	_check(game.round_label.text.begins_with("Team 1 wins"), "a multi-player team battle announces the winning team")
 
 	var six_slots := _make_slots(6, FighterSlotConfig.ControlType.CPU, 3)
 	game.configure_match(six_slots, MatchManager.MatchMode.TEAM_BATTLE, false)
@@ -172,6 +349,9 @@ func _run() -> void:
 		unique_spawns[fighter.global_position] = true
 	_check(game.fighters.size() == 8, "an eight-CPU stress configuration spawns all fighters")
 	_check(unique_spawns.size() == 8, "eight fighters receive non-overlapping authored spawn points")
+	arena = game.current_stage
+	for spawn in arena.get_spawn_points():
+		_check(_arena_spawn_is_clear(arena, game.fighters[0], spawn), "an eight-player Arena spawn remains clear of platform collision")
 	_check(game.match_manager.get_opponents(game.fighters[0]).size() == 4, "four-versus-four is structurally supported")
 	game.match_manager.match_mode = MatchManager.MatchMode.FREE_FOR_ALL
 	_check(game.match_manager.get_opponents(game.fighters[0]).size() == 7, "free-for-all treats every other active fighter as an opponent")

@@ -1,11 +1,13 @@
 class_name ArenaStage
 extends Node2D
 
+const SIDE_PLATFORM_Y := 410.0
+
 
 func _ready() -> void:
 	_add_platform(Vector2(640, 600), Vector2(1100, 72), Color("364152"))
-	_add_platform(Vector2(195, 470), Vector2(220, 30), Color("48566a"))
-	_add_platform(Vector2(1085, 470), Vector2(220, 30), Color("48566a"))
+	_add_platform(Vector2(195, SIDE_PLATFORM_Y), Vector2(220, 30), Color("48566a"))
+	_add_platform(Vector2(1085, SIDE_PLATFORM_Y), Vector2(220, 30), Color("48566a"))
 	queue_redraw()
 
 

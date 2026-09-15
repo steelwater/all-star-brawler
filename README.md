@@ -9,9 +9,9 @@ The prototype uses **Godot 4.7.2 stable** and **GDScript**. It includes:
 - One shared fighter/combat implementation driven by human or CPU commands
 - Eight independently configurable fighter slots
 - Human, Easy CPU, Medium CPU, Hard CPU, or Disabled control per slot
-- Free-for-all and multi-team battles with optional friendly fire
+- Free-for-all and multi-team battles with optional teammate hits
 - Data-driven sword and hammer loadouts, weapon throwing, pickup, and thrown damage
-- Movement, jumping, ducking, attacks, kicks, blocking, taunts, health, knockback, and match restart
+- Movement, jumping, crouching, attacks, kicks, blocking, taunts, health, knockback, and match restart
 - An eight-spawn test arena and safe fallback spawns for stages with fewer authored points
 - A moving Freeway stage whose road drains health
 
@@ -23,7 +23,7 @@ Creator tools, imported assets, armor, save files, networking, progression, mobi
 2. Import this repository's `project.godot` in the Godot Project Manager.
 3. Run the project with **F5**.
 
-Open **Match Setup** or press `Tab` to configure up to eight slots. Every enabled slot exposes its character, Human/CPU control type, CPU difficulty when applicable, and team. Choose Free For All or Team Battle, optionally enable Friendly Fire, then start the match.
+Open **Match Setup** or press `Tab` to configure up to eight slots. Every enabled slot exposes its character, Human/CPU control type, and CPU difficulty when applicable. Team assignments and the **Hit Teammates** option appear only for Team Battle.
 
 Only two local human input maps exist in this prototype. Additional active slots should therefore use CPU control until controller/device mapping is expanded.
 
@@ -33,7 +33,7 @@ Only two local human input maps exist in this prototype. Additional active slots
 | --- | --- | --- |
 | Move | `A` / `D` | `J` / `L` |
 | Jump | `W` | `I` |
-| Duck | `S` | `K` |
+| Crouch | `S` | `K` |
 | Attack | `F` | `O` |
 | Defend | `G` | `P` |
 | Kick | `H` | `M` |
@@ -41,7 +41,7 @@ Only two local human input maps exist in this prototype. Additional active slots
 | Taunt | `E` | `N` |
 | Swap weapon (debug) | `T` | `Y` |
 
-Additional controls: `1` Arena, `2` Freeway, `R` restart, and `Tab` match setup.
+Additional controls: `1` Arena, `2` Freeway, `R` restart, and `Tab` match setup. After a match ends, press any key to restart the same match.
 
 ## Multiplayer architecture
 

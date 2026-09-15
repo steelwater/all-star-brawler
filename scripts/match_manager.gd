@@ -60,6 +60,22 @@ func get_opponents(fighter: Fighter) -> Array[Fighter]:
 	return opponents
 
 
+func teams_have_one_fighter_each() -> bool:
+	if match_mode != MatchMode.TEAM_BATTLE:
+		return false
+	var team_sizes: Dictionary = {}
+	for slot in fighter_slots:
+		if not slot.is_enabled():
+			continue
+		team_sizes[slot.team_id] = int(team_sizes.get(slot.team_id, 0)) + 1
+	if team_sizes.size() < 2:
+		return false
+	for size in team_sizes.values():
+		if size != 1:
+			return false
+	return true
+
+
 func record_defeat(_fighter: Fighter) -> bool:
 	if completed:
 		return true

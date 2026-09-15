@@ -14,10 +14,10 @@ func get_command(_delta: float) -> FighterCommand:
 	command.jump = _just_pressed("jump")
 	command.attack = _just_pressed("attack")
 	command.defend = _pressed("defend")
-	command.duck = _pressed("duck")
+	command.crouch = _pressed("crouch")
 	command.kick = _just_pressed("kick")
 	command.weapon_action = _just_pressed("weapon_action")
-	command.taunt = _just_pressed("taunt")
+	command.taunt = _pressed("taunt")
 	return command
 
 
