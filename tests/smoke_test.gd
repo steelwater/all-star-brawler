@@ -155,6 +155,19 @@ func _run() -> void:
 	first_control.select(FighterSlotConfig.ControlType.HUMAN)
 	game._refresh_setup_row(first_setup_row)
 	_check(not first_difficulty.visible, "CPU difficulty stays hidden for human control")
+	var human_item_index := first_control.get_item_index(FighterSlotConfig.ControlType.HUMAN)
+	_check(not first_control.is_item_disabled(human_item_index), "Fighter 1 keeps the Human control option")
+	var second_control: OptionButton = game.setup_rows[1]["control"]
+	_check(not second_control.is_item_disabled(second_control.get_item_index(FighterSlotConfig.ControlType.HUMAN)), "Fighter 2 keeps the Human control option")
+	for index in range(2, MatchManager.MAX_FIGHTERS):
+		var extra_control: OptionButton = game.setup_rows[index]["control"]
+		_check(extra_control.is_item_disabled(extra_control.get_item_index(FighterSlotConfig.ControlType.HUMAN)), "Fighter %d cannot select an unmapped Human controller" % (index + 1))
+	var third_control: OptionButton = game.setup_rows[2]["control"]
+	third_control.select(third_control.get_item_index(FighterSlotConfig.ControlType.HUMAN))
+	game._apply_setup()
+	_check(game.setup_message.text == "Only Fighter 1 and Fighter 2 can use Human controls.", "Match Setup rejects an invalid extra Human assignment")
+	third_control.select(third_control.get_item_index(FighterSlotConfig.ControlType.DISABLED))
+	game.setup_message.text = ""
 	_check(game.friendly_fire_toggle.text == "Hit Teammates", "the team damage option uses child-friendly wording")
 	_check(not game.team_heading.visible and not first_setup_row["team"].visible and not game.friendly_fire_toggle.visible, "team fields stay hidden in Free For All")
 	_check(game.setup_grid.columns == 4, "Free For All keeps the setup grid aligned without the Team column")

@@ -9,6 +9,7 @@ const FIGHTER_COLORS := [
 	Color("4dabf7"), Color("ff6b6b"), Color("69db7c"), Color("ffd43b"),
 	Color("b197fc"), Color("ff922b"), Color("38d9a9"), Color("f06595"),
 ]
+const MAX_LOCAL_HUMAN_FIGHTERS := 2
 
 @onready var health_label: Label = $HUD/SafeArea/TopBar/Health
 @onready var stage_label: Label = $HUD/SafeArea/TopBar/Stage
@@ -272,6 +273,10 @@ func _build_setup_panel() -> void:
 		control.add_item("Human", FighterSlotConfig.ControlType.HUMAN)
 		control.add_item("CPU", FighterSlotConfig.ControlType.CPU)
 		control.add_item("Disabled", FighterSlotConfig.ControlType.DISABLED)
+		var human_item_index := control.get_item_index(FighterSlotConfig.ControlType.HUMAN)
+		if index >= MAX_LOCAL_HUMAN_FIGHTERS:
+			control.set_item_disabled(human_item_index, true)
+			control.set_item_tooltip(human_item_index, "Only Fighter 1 and Fighter 2 have keyboard controls.")
 		control.select(slot_configs[index].control_type)
 		setup_grid.add_child(control)
 		var difficulty := OptionButton.new()
@@ -355,6 +360,11 @@ func _toggle_setup() -> void:
 
 
 func _apply_setup() -> void:
+	for index in setup_rows.size():
+		var control: OptionButton = setup_rows[index]["control"]
+		if index >= MAX_LOCAL_HUMAN_FIGHTERS and control.get_selected_id() == FighterSlotConfig.ControlType.HUMAN:
+			setup_message.text = "Only Fighter 1 and Fighter 2 can use Human controls."
+			return
 	var enabled_count := 0
 	var teams: Dictionary = {}
 	for index in setup_rows.size():

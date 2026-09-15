@@ -25,7 +25,7 @@ Creator tools, imported assets, armor, save files, networking, progression, mobi
 
 Open **Match Setup** or press `Tab` to configure up to eight slots. Every enabled slot exposes its character, Human/CPU control type, and CPU difficulty when applicable. Team assignments and the **Hit Teammates** option appear only for Team Battle.
 
-Only two local human input maps exist in this prototype. Additional active slots should therefore use CPU control until controller/device mapping is expanded.
+Only two local human input maps exist in this prototype. Match Setup restricts Fighters 3–8 to CPU or Disabled until controller/device mapping is expanded.
 
 ## Controls
 
