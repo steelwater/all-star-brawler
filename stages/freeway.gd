@@ -30,6 +30,13 @@ func get_spawn_points() -> Array[Vector2]:
 	return [Vector2(350, 450), Vector2(900, 450)]
 
 
+func get_fallback_spawn_points() -> Array[Vector2]:
+	return [
+		Vector2(100, 420), Vector2(640, 420), Vector2(1140, 420),
+		Vector2(240, 330), Vector2(640, 330), Vector2(1040, 330),
+	]
+
+
 func is_drain_zone(point: Vector2) -> bool:
 	return point.y >= ROAD_DRAIN_Y
 

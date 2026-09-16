@@ -99,12 +99,17 @@ func load_stage(new_stage_index: int) -> void:
 	for slot in slot_configs:
 		if slot.is_enabled():
 			active_slots.append(slot)
-	var spawn_points := _resolve_spawn_points(current_stage.get_spawn_points(), active_slots.size())
+	var spawn_points := _resolve_spawn_points(current_stage, active_slots.size())
+	var used_spawn_indexes: Dictionary = {}
 	for index in active_slots.size():
 		var slot := active_slots[index]
 		var spawn_index := clampi(slot.spawn_index, 0, spawn_points.size() - 1)
-		if spawn_index >= active_slots.size():
-			spawn_index = index
+		if used_spawn_indexes.has(spawn_index):
+			for candidate_index in spawn_points.size():
+				if not used_spawn_indexes.has(candidate_index):
+					spawn_index = candidate_index
+					break
+		used_spawn_indexes[spawn_index] = true
 		_spawn_fighter(slot, spawn_points[spawn_index])
 	stage_label.text = "%s  •  %s" % [
 		"Arena" if stage_index == 0 else "Freeway",
@@ -143,8 +148,14 @@ func _spawn_fighter(slot: FighterSlotConfig, spawn_position: Vector2) -> void:
 	fighters.append(fighter)
 
 
-func _resolve_spawn_points(authored_points: Array[Vector2], count: int) -> Array[Vector2]:
-	var result := authored_points.duplicate()
+func _resolve_spawn_points(stage: Node2D, count: int) -> Array[Vector2]:
+	var result: Array[Vector2] = stage.get_spawn_points().duplicate()
+	if stage.has_method("get_fallback_spawn_points"):
+		var safe_fallbacks: Array[Vector2] = stage.get_fallback_spawn_points()
+		for fallback in safe_fallbacks:
+			if result.size() >= count:
+				break
+			result.append(fallback)
 	for index in range(result.size(), count):
 		var denominator := maxi(1, count - 1)
 		var x := lerpf(160.0, 1120.0, float(index) / float(denominator))
@@ -360,11 +371,9 @@ func _toggle_setup() -> void:
 
 
 func _apply_setup() -> void:
-	for index in setup_rows.size():
-		var control: OptionButton = setup_rows[index]["control"]
-		if index >= MAX_LOCAL_HUMAN_FIGHTERS and control.get_selected_id() == FighterSlotConfig.ControlType.HUMAN:
-			setup_message.text = "Only Fighter 1 and Fighter 2 can use Human controls."
-			return
+	var pending_controls: Array[int] = []
+	var pending_difficulties: Array[int] = []
+	var pending_teams: Array[int] = []
 	var enabled_count := 0
 	var teams: Dictionary = {}
 	for index in setup_rows.size():
@@ -372,12 +381,17 @@ func _apply_setup() -> void:
 		var control: OptionButton = row["control"]
 		var difficulty: OptionButton = row["difficulty"]
 		var team: SpinBox = row["team"]
-		slot_configs[index].control_type = control.get_selected_id()
-		slot_configs[index].cpu_difficulty = difficulty.get_selected_id()
-		slot_configs[index].team_id = int(team.value)
-		if slot_configs[index].is_enabled():
+		var selected_control := control.get_selected_id()
+		var selected_team := int(team.value)
+		if index >= MAX_LOCAL_HUMAN_FIGHTERS and selected_control == FighterSlotConfig.ControlType.HUMAN:
+			setup_message.text = "Only Fighter 1 and Fighter 2 can use Human controls."
+			return
+		pending_controls.append(selected_control)
+		pending_difficulties.append(difficulty.get_selected_id())
+		pending_teams.append(selected_team)
+		if selected_control != FighterSlotConfig.ControlType.DISABLED:
 			enabled_count += 1
-			teams[slot_configs[index].team_id] = true
+			teams[selected_team] = true
 	if enabled_count < 2:
 		setup_message.text = "Enable at least two fighters."
 		return
@@ -385,6 +399,10 @@ func _apply_setup() -> void:
 	if selected_mode == MatchManager.MatchMode.TEAM_BATTLE and teams.size() < 2:
 		setup_message.text = "Team Battle needs at least two teams."
 		return
+	for index in setup_rows.size():
+		slot_configs[index].control_type = pending_controls[index]
+		slot_configs[index].cpu_difficulty = pending_difficulties[index]
+		slot_configs[index].team_id = pending_teams[index]
 	_hide_setup()
 	var allow_team_hits := selected_mode == MatchManager.MatchMode.TEAM_BATTLE and friendly_fire_toggle.button_pressed
 	configure_match(slot_configs, selected_mode, allow_team_hits)

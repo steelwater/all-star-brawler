@@ -55,6 +55,29 @@ func _arena_spawn_is_clear(stage: ArenaStage, fighter: Fighter, spawn: Vector2) 
 	return true
 
 
+func _freeway_spawn_is_clear(stage: FreewayStage, fighter: Fighter, spawn: Vector2) -> bool:
+	var capsule := fighter.collision_shape.shape as CapsuleShape2D
+	var fighter_size := Vector2(capsule.radius * 2.0, capsule.height)
+	var fighter_rect := Rect2(spawn + fighter.collision_shape.position - fighter_size * 0.5, fighter_size)
+	var car_motion_envelope := Vector2(24, 5)
+	for index in stage.cars.size():
+		var collision: CollisionShape2D
+		for child in stage.cars[index].get_children():
+			if child is CollisionShape2D:
+				collision = child
+				break
+		if collision == null:
+			return false
+		var rectangle := collision.shape as RectangleShape2D
+		var car_rect := Rect2(
+			stage.car_origins[index] - rectangle.size * 0.5 - car_motion_envelope,
+			rectangle.size + car_motion_envelope * 2.0
+		)
+		if fighter_rect.intersects(car_rect):
+			return false
+	return true
+
+
 func _make_slots(count: int, control_type: int, team_size := 1) -> Array[FighterSlotConfig]:
 	var slots: Array[FighterSlotConfig] = []
 	var colors := [
@@ -167,6 +190,17 @@ func _run() -> void:
 	game._apply_setup()
 	_check(game.setup_message.text == "Only Fighter 1 and Fighter 2 can use Human controls.", "Match Setup rejects an invalid extra Human assignment")
 	third_control.select(third_control.get_item_index(FighterSlotConfig.ControlType.DISABLED))
+	game.setup_message.text = ""
+	var first_team: SpinBox = first_setup_row["team"]
+	var original_first_team: int = game.slot_configs[0].team_id
+	var original_second_control: int = game.slot_configs[1].control_type
+	first_team.value = 8
+	second_control.select(second_control.get_item_index(FighterSlotConfig.ControlType.DISABLED))
+	game._apply_setup()
+	_check(game.setup_message.text == "Enable at least two fighters.", "Match Setup reports an invalid enabled-fighter count")
+	_check(game.slot_configs[0].team_id == original_first_team and game.slot_configs[1].control_type == original_second_control, "rejected Match Setup values do not mutate the live configuration")
+	first_team.value = original_first_team
+	second_control.select(second_control.get_item_index(FighterSlotConfig.ControlType.HUMAN))
 	game.setup_message.text = ""
 	_check(game.friendly_fire_toggle.text == "Hit Teammates", "the team damage option uses child-friendly wording")
 	_check(not game.team_heading.visible and not first_setup_row["team"].visible and not game.friendly_fire_toggle.visible, "team fields stay hidden in Free For All")
@@ -335,6 +369,11 @@ func _run() -> void:
 	cpu.decision_remaining = 0.0
 	cpu.get_command(0.2)
 	_check(cpu.target != null and cpu.target.team_id != game.fighters[0].team_id, "CPU target selection ignores teammates")
+	_check(is_equal_approx(cpu.reaction_remaining, cpu.profile.reaction_delay), "CPU reaction delay re-arms after each decision")
+	var rearmed_reaction_delay := cpu.reaction_remaining
+	cpu.decision_remaining = 0.0
+	cpu.get_command(rearmed_reaction_delay * 0.5)
+	_check(cpu.reaction_remaining > 0.0 and cpu.reaction_remaining < rearmed_reaction_delay, "a re-armed reaction delay gates the next ready decision")
 
 	game.fighters[2].defeat()
 	game.fighters[3].defeat()
@@ -377,6 +416,18 @@ func _run() -> void:
 		unique_spawns[fighter.global_position] = true
 	_check(game.current_stage is FreewayStage and game.fighters.size() == 8, "the Freeway stage accepts an eight-fighter test match")
 	_check(unique_spawns.size() == 8, "fallback spawns safely supplement a stage with fewer authored points")
+	for fighter in game.fighters:
+		_check(_freeway_spawn_is_clear(game.current_stage, fighter, fighter.global_position), "a Freeway spawn clears the full moving-car collision envelope")
+	var sparse_slots := _make_slots(8, FighterSlotConfig.ControlType.CPU)
+	for slot_index in range(1, 6):
+		sparse_slots[slot_index].control_type = FighterSlotConfig.ControlType.DISABLED
+	game.configure_match(sparse_slots, MatchManager.MatchMode.FREE_FOR_ALL, false)
+	await process_frame
+	await physics_frame
+	unique_spawns.clear()
+	for fighter in game.fighters:
+		unique_spawns[fighter.global_position] = true
+	_check(game.fighters.size() == 3 and unique_spawns.size() == 3, "sparse high-numbered slots receive unique resolved spawns")
 	_check(game.current_stage.is_drain_zone(Vector2(640, 620)), "the Freeway road remains a health-drain zone")
 	var first_car_start: Vector2 = game.current_stage.cars[0].position
 	for frame in range(3):

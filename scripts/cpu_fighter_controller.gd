@@ -36,6 +36,7 @@ func get_command(delta: float) -> FighterCommand:
 	if reaction_remaining <= 0.0 and decision_remaining <= 0.0:
 		_make_decision()
 		decision_remaining = profile.decision_interval
+		reaction_remaining = profile.reaction_delay
 
 	command.move_axis = desired_move
 	command.defend = wants_defend
