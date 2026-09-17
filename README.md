@@ -1,90 +1,71 @@
 # All Star Brawler
 
-All Star Brawler is a small Godot prototype for testing a simple 2D brawler with interchangeable weapons and modular stages.
-
-The MVP is intended to answer three questions:
-
-1. Is the basic brawler fun?
-2. Does interchangeable weapon gear work cleanly?
-3. Is fighting on moving freeway vehicles fun enough to pursue?
+All Star Brawler is a small Godot prototype for testing a configurable 2D brawler with interchangeable weapons, human or CPU control, free-for-all and team matches, and modular stages.
 
 ## Prototype scope
 
-The planned prototype uses **Godot 4.7.2 stable** and **GDScript**. Its intentionally narrow scope includes:
+The prototype uses **Godot 4.7.2 stable** and **GDScript**. It includes:
 
-- Two fighters with movement, jumping, ducking, attacks, kicks, taunts, health, knockback, and round restart behavior
-- A data-driven weapon slot with at least a sword and hammer
-- Reusable weapon throwing, thrown-weapon damage, and ground pickup
-- Weapon-specific hit sounds and a distinct block sound
-- A basic test arena
-- A moving-freeway stage with vehicle-roof platforms and a damaging road below
-- Minimal health, restart, stage-selection, and weapon-test UI
+- One shared fighter/combat implementation driven by human or CPU commands
+- Eight independently configurable fighter slots
+- Human, Easy CPU, Medium CPU, Hard CPU, or Disabled control per slot
+- Free-for-all and multi-team battles with optional teammate hits
+- Data-driven sword and hammer loadouts, weapon throwing, pickup, and thrown damage
+- Movement, jumping, crouching, attacks, kicks, blocking, taunts, health, knockback, and match restart
+- An eight-spawn test arena and safe fallback spawns for stages with fewer authored points
+- A moving Freeway stage whose road drains health
 
-Creator tools, imported assets, armor, save files, networking, progression, mobile controls, and production packaging are outside this prototype.
+Creator tools, imported assets, armor, save files, networking, progression, mobile controls, and production packaging remain outside this prototype.
 
 ## Run the prototype
 
 1. Install [Godot 4.7.2 stable](https://godotengine.org/download/archive/4.7.2-stable/).
-2. Import this repository's `project.godot` file in the Godot Project Manager.
-3. Run the project with **F5** or the editor's Run Project button.
+2. Import this repository's `project.godot` in the Godot Project Manager.
+3. Run the project with **F5**.
 
-The project uses only GDScript, built-in Godot nodes, generated placeholder sounds, and code-drawn placeholder visuals. No additional runtime dependencies are required.
+Open **Match Setup** or press `Tab` to configure up to eight slots. Every enabled slot exposes its character, Human/CPU control type, and CPU difficulty when applicable. Team assignments and the **Hit Teammates** option appear only for Team Battle.
+
+Only two local human input maps exist in this prototype. Match Setup restricts Fighters 3–8 to CPU or Disabled until controller/device mapping is expanded.
 
 ## Controls
 
-| Action | Player 1 | Player 2 |
+| Action | Human 1 | Human 2 |
 | --- | --- | --- |
 | Move | `A` / `D` | `J` / `L` |
 | Jump | `W` | `I` |
-| Duck | `S` | `K` |
+| Crouch | `S` | `K` |
 | Attack | `F` | `O` |
 | Defend | `G` | `P` |
 | Kick | `H` | `M` |
 | Throw / pick up weapon | `Q` | `U` |
 | Taunt | `E` | `N` |
-| Swap weapon | `T` | `Y` |
+| Swap weapon (debug) | `T` | `Y` |
 
-Additional test controls:
+Additional controls: `1` Arena, `2` Freeway, `R` restart, and `Tab` match setup. After a match ends, press any key to restart the same match.
 
-- `1`: Load the arena
-- `2`: Load the freeway stage
-- `R`: Restart the round
+## Multiplayer architecture
 
-Falling from the arena or reaching zero health restarts the round automatically. On the Freeway stage, a fighter who misses a car lands on the road. The road continuously drains health until the fighter returns to a car or is defeated.
+`FighterSlotConfig` describes each slot's character, loadout, control type, CPU difficulty, input player, team, spawn, and enabled state. `MatchManager` owns opponent relationships, friendly-fire rules, active fighters, and victory conditions. `HumanFighterController` and `CpuFighterController` both produce `FighterCommand` values consumed by the same `Fighter` class.
 
-Walking and taunting use deliberately simple code-drawn prototype animation.
+CPU difficulty comes from editable `CpuProfile` values such as reaction delay, decision interval, aggression, accuracy, preferred distance, risk, target switching, blocking, and dodging. Difficulty does not modify fighter health or damage. Weapon definitions expose attack range, preferred distance, cooldown, damage, and knockback so CPU decisions remain weapon-aware without weapon-specific AI.
 
 ## Weapon architecture
 
-Weapon definitions live in [`weapons/`](weapons/) as custom `WeaponDefinition` resources:
-
-- [`sword.tres`](weapons/sword.tres)
-- [`hammer.tres`](weapons/hammer.tres)
-
-Each definition owns its identity, display name, placeholder visual configuration, damage, knockback, hit sound, hit-area dimensions, and cooldown. [`weapon.gd`](weapons/weapon.gd) applies that definition and handles attacks. [`fighter.gd`](characters/fighter.gd) only equips and uses the reusable weapon scene; it contains no sword- or hammer-specific combat logic.
-
-### Add a third weapon
-
-1. Duplicate `weapons/sword.tres` or `weapons/hammer.tres`.
-2. Give the resource a unique `id` and `display_name`.
-3. Set its visual values, damage, knockback, attack area, cooldown, and `hit_sound`.
-4. Assign or preload that resource wherever the prototype should equip it.
-
-No fighter code changes are required. Adding the new weapon to the debug weapon-cycle control would only require updating the prototype-level selection list in `scripts/game.gd`.
+Weapon definitions live in [`weapons/`](weapons/) as `WeaponDefinition` resources. To add a weapon, duplicate an existing `.tres`, assign a unique identity and visual/gameplay metadata, and use it as a slot loadout. Fighter and CPU code do not require weapon-specific branches.
 
 ## Verification
 
-Run the focused gameplay smoke test from the repository root:
+Run the focused headless test from the repository root:
 
 ```sh
 godot --headless --path . --script res://tests/smoke_test.gd
 ```
 
-It verifies fighter creation, combat, ducking, kicking, weapon throwing and pickup, taunting, stage switching, moving freeway platforms, road landing, and road damage.
+It covers the legacy combat moves, shared controller path, difficulty profiles, CPU-only combat, team-aware damage and targeting, friendly fire, team victory, 4-player, 3-vs-3, and 8-player configurations, plus authored and fallback spawns.
 
 ## Status
 
-The MVP prototype is playable. Visuals and sounds are deliberately temporary and exist only to test combat, modular weapons, and the freeway-stage concept.
+This is a playable architecture and balancing prototype. Eight-player setup is intentionally functional rather than polished; dense matches still require human play-testing for readability, camera behavior, audio overlap, and combat congestion.
 
 ## License
 

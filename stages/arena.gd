@@ -1,16 +1,21 @@
 class_name ArenaStage
 extends Node2D
 
+const SIDE_PLATFORM_Y := 410.0
+
 
 func _ready() -> void:
-	_add_platform(Vector2(640, 600), Vector2(900, 72), Color("364152"))
-	_add_platform(Vector2(195, 470), Vector2(220, 30), Color("48566a"))
-	_add_platform(Vector2(1085, 470), Vector2(220, 30), Color("48566a"))
+	_add_platform(Vector2(640, 600), Vector2(1100, 72), Color("364152"))
+	_add_platform(Vector2(195, SIDE_PLATFORM_Y), Vector2(220, 30), Color("48566a"))
+	_add_platform(Vector2(1085, SIDE_PLATFORM_Y), Vector2(220, 30), Color("48566a"))
 	queue_redraw()
 
 
 func get_spawn_points() -> Array[Vector2]:
-	return [Vector2(430, 510), Vector2(850, 510)]
+	return [
+		Vector2(190, 510), Vector2(320, 510), Vector2(450, 510), Vector2(580, 510),
+		Vector2(700, 510), Vector2(830, 510), Vector2(960, 510), Vector2(1090, 510),
+	]
 
 
 func _add_platform(platform_position: Vector2, size: Vector2, color: Color) -> void:
@@ -18,19 +23,15 @@ func _add_platform(platform_position: Vector2, size: Vector2, color: Color) -> v
 	body.position = platform_position
 	body.collision_layer = 1
 	body.collision_mask = 2
-
 	var shape := CollisionShape2D.new()
 	var rectangle := RectangleShape2D.new()
 	rectangle.size = size
 	shape.shape = rectangle
 	body.add_child(shape)
-
 	var visual := Polygon2D.new()
 	visual.polygon = PackedVector2Array([
-		Vector2(-size.x * 0.5, -size.y * 0.5),
-		Vector2(size.x * 0.5, -size.y * 0.5),
-		Vector2(size.x * 0.5, size.y * 0.5),
-		Vector2(-size.x * 0.5, size.y * 0.5),
+		Vector2(-size.x * 0.5, -size.y * 0.5), Vector2(size.x * 0.5, -size.y * 0.5),
+		Vector2(size.x * 0.5, size.y * 0.5), Vector2(-size.x * 0.5, size.y * 0.5),
 	])
 	visual.color = color
 	body.add_child(visual)

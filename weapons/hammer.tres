@@ -15,4 +15,6 @@ knockback = 560.0
 hit_sound = ExtResource("2_sound")
 attack_size = Vector2(84, 82)
 attack_offset = 60.0
+attack_range = 105.0
+preferred_distance = 80.0
 cooldown = 0.72
