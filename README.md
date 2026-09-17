@@ -12,10 +12,11 @@ The prototype uses **Godot 4.7.2 stable** and **GDScript**. It includes:
 - Free-for-all and multi-team battles with optional teammate hits
 - Data-driven sword and hammer loadouts, weapon throwing, pickup, and thrown damage
 - Movement, jumping, crouching, attacks, kicks, blocking, taunts, health, knockback, and match restart
+- A local Fighters Library with names, color/weapon customization, previews, editing, duplication, and confirmed deletion
 - An eight-spawn test arena and safe fallback spawns for stages with fewer authored points
 - A moving Freeway stage whose road drains health
 
-Creator tools, imported assets, armor, save files, networking, progression, mobile controls, and production packaging remain outside this prototype.
+General asset importing, armor, stage creation, networking, progression, mobile controls, and production packaging remain outside this prototype.
 
 ## Run the prototype
 
@@ -26,6 +27,16 @@ Creator tools, imported assets, armor, save files, networking, progression, mobi
 Open **Match Setup** or press `Tab` to configure up to eight slots. Every enabled slot exposes its character, Human/CPU control type, and CPU difficulty when applicable. Team assignments and the **Hit Teammates** option appear only for Team Battle.
 
 Only two local human input maps exist in this prototype. Match Setup restricts Fighters 3–8 to CPU or Disabled until controller/device mapping is expanded.
+
+## Fighters Library
+
+Click **Library (F3)** or press `F3` to open the collection. Controller Menu/Start also opens it; D-pad, confirm (bottom face button), and back (right face button) operate menus. Fighter names still use keyboard text entry. This does not add gamepad combat or additional human input maps.
+
+Choose **Create Fighter**, enter a name, pick one of the existing eight colors and either Sword or Hammer, then **Save Fighter**. Use **Edit**, **Copy**, or **Delete** on a fighter card. Unsaved edits and deletion require confirmation.
+
+Choose a target slot and **Use Fighter**, then set Human/CPU, difficulty and team in Match Setup before **Start Match**. Each slot also has a character selector. The same saved fighter can occupy multiple slots. Editing affects the next match selection; current matches retain their configuration. Deleting a selected record leaves a running match intact and returns its menu choice to Prototype Fighter.
+
+Records live in Godot's `user://library/items` directory and survive game restarts. They are separate from packaged resources and Git. See [Library architecture and verification](docs/library-system.md).
 
 ## Controls
 
@@ -59,6 +70,7 @@ Run the focused headless test from the repository root:
 
 ```sh
 godot --headless --path . --script res://tests/smoke_test.gd
+godot --headless --path . --script res://tests/library_test.gd
 ```
 
 It covers the legacy combat moves, shared controller path, difficulty profiles, CPU-only combat, team-aware damage and targeting, friendly fire, team victory, 4-player, 3-vs-3, and 8-player configurations, plus authored and fallback spawns.
