@@ -32,6 +32,9 @@ var friendly_fire_toggle: CheckButton
 var setup_grid: GridContainer
 var team_heading: Label
 var setup_message: Label
+var library_store := LibraryStore.new()
+var library_panel: LibraryPanel
+var library_button: Button
 
 
 func _ready() -> void:
@@ -42,14 +45,22 @@ func _ready() -> void:
 	match_manager.match_completed.connect(_on_match_completed)
 	_create_default_slots()
 	_build_setup_panel()
+	_build_library()
 	setup_button.pressed.connect(_show_setup)
 	configure_match(slot_configs, MatchManager.MatchMode.FREE_FOR_ALL, false)
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if library_panel != null and library_panel.visible:
+		return
 	var key_event := event as InputEventKey
 	var is_new_key_press := key_event != null and key_event.pressed and not key_event.echo
-	if reset_pending and is_new_key_press:
+	var menu_button: bool = event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_START
+	if menu_button or (is_new_key_press and key_event.physical_keycode == KEY_F3):
+		_show_library()
+		get_viewport().set_input_as_handled()
+		return
+	if reset_pending and is_new_key_press and not setup_panel.visible:
 		reset_round()
 		get_viewport().set_input_as_handled()
 		return
@@ -275,10 +286,11 @@ func _build_setup_panel() -> void:
 		var slot_label := Label.new()
 		slot_label.text = "Fighter %d" % (index + 1)
 		setup_grid.add_child(slot_label)
-		var character_label := Label.new()
-		character_label.text = "Prototype Fighter"
-		character_label.custom_minimum_size.x = 145.0
-		setup_grid.add_child(character_label)
+		var character := OptionButton.new()
+		character.custom_minimum_size.x = 180.0
+		character.fit_to_longest_item = false
+		character.clip_text = true
+		setup_grid.add_child(character)
 		var control := OptionButton.new()
 		control.custom_minimum_size.x = 130.0
 		control.add_item("Human", FighterSlotConfig.ControlType.HUMAN)
@@ -306,7 +318,7 @@ func _build_setup_panel() -> void:
 		team.max_value = 8
 		team.value = slot_configs[index].team_id
 		setup_grid.add_child(team)
-		var row := {"control": control, "difficulty": difficulty, "team": team}
+		var row := {"character": character, "control": control, "difficulty": difficulty, "team": team}
 		setup_rows.append(row)
 		control.item_selected.connect(func(_selected: int) -> void: _refresh_setup_row(row))
 		_refresh_setup_row(row)
@@ -347,7 +359,10 @@ func _refresh_setup_mode() -> void:
 
 
 func _show_setup() -> void:
+	if library_panel != null and library_panel.visible:
+		return
 	setup_message.text = ""
+	_refresh_character_choices()
 	_refresh_setup_mode()
 	setup_panel.show()
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -399,10 +414,93 @@ func _apply_setup() -> void:
 	if selected_mode == MatchManager.MatchMode.TEAM_BATTLE and teams.size() < 2:
 		setup_message.text = "Team Battle needs at least two teams."
 		return
+	var pending_fighters: Array[Dictionary] = []
+	for row in setup_rows:
+		var character: OptionButton = row["character"]
+		var id: String = character.get_item_metadata(character.selected)
+		var record := {} if id.is_empty() else library_store.get_fighter(id)
+		if not id.is_empty() and record.is_empty():
+			setup_message.text = "A selected fighter is no longer available. Choose another fighter."
+			return
+		pending_fighters.append(record)
 	for index in setup_rows.size():
+		if pending_fighters[index].is_empty():
+			slot_configs[index].library_fighter_id = ""
+			slot_configs[index].character_id = &"prototype_fighter"
+			slot_configs[index].fighter_color = FIGHTER_COLORS[index]
+			slot_configs[index].starting_weapon = SWORD if index % 2 == 0 else HAMMER
+		else:
+			LibraryItem.apply_to_slot(pending_fighters[index], slot_configs[index])
 		slot_configs[index].control_type = pending_controls[index]
 		slot_configs[index].cpu_difficulty = pending_difficulties[index]
 		slot_configs[index].team_id = pending_teams[index]
 	_hide_setup()
 	var allow_team_hits := selected_mode == MatchManager.MatchMode.TEAM_BATTLE and friendly_fire_toggle.button_pressed
 	configure_match(slot_configs, selected_mode, allow_team_hits)
+
+
+func _build_library() -> void:
+	library_panel = LibraryPanel.new()
+	library_panel.store = library_store
+	$HUD.add_child(library_panel)
+	library_panel.closed.connect(_close_library)
+	library_panel.fighter_selected.connect(_choose_library_fighter)
+	library_panel.collection_changed.connect(_refresh_character_choices)
+	library_button = Button.new()
+	library_button.text = "Library (F3)"
+	library_button.position = Vector2(24, 145)
+	library_button.custom_minimum_size = Vector2(140, 42)
+	library_button.pressed.connect(_show_library)
+	$HUD/SafeArea.add_child(library_button)
+	_refresh_character_choices()
+
+
+func _refresh_character_choices() -> void:
+	var records := library_store.list_fighters()
+	for index in setup_rows.size():
+		var choice: OptionButton = setup_rows[index]["character"]
+		var selected_id := slot_configs[index].library_fighter_id
+		if choice.item_count > 0:
+			selected_id = choice.get_item_metadata(choice.selected)
+		choice.clear()
+		choice.add_item("Prototype Fighter")
+		choice.set_item_metadata(0, "")
+		for record in records:
+			choice.add_item(record["display_name"])
+			choice.set_item_metadata(choice.item_count - 1, record["id"])
+			if record["id"] == selected_id:
+				choice.select(choice.item_count - 1)
+
+
+func _show_library() -> void:
+	if library_panel.visible:
+		return
+	setup_panel.hide()
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	for world_weapon in get_tree().get_nodes_in_group("world_weapons"):
+		world_weapon.process_mode = Node.PROCESS_MODE_PAUSABLE
+	get_tree().paused = true
+	setup_button.focus_mode = Control.FOCUS_NONE
+	library_button.focus_mode = Control.FOCUS_NONE
+	library_panel.open()
+
+
+func _close_library() -> void:
+	setup_button.focus_mode = Control.FOCUS_ALL
+	library_button.focus_mode = Control.FOCUS_ALL
+	get_tree().paused = false
+	process_mode = Node.PROCESS_MODE_INHERIT
+	get_viewport().gui_release_focus()
+
+
+func _choose_library_fighter(id: String, slot_index: int) -> void:
+	library_panel.hide()
+	setup_button.focus_mode = Control.FOCUS_ALL
+	library_button.focus_mode = Control.FOCUS_ALL
+	_show_setup()
+	var choice: OptionButton = setup_rows[slot_index]["character"]
+	for index in choice.item_count:
+		if choice.get_item_metadata(index) == id:
+			choice.select(index)
+	choice.grab_focus()
+	setup_message.text = "Fighter selected. Choose control and team, then Start Match."
