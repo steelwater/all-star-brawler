@@ -50,6 +50,23 @@ func _run() -> void:
 	_check(loaded["payload"] == payload, "Hair and sound survive loading from a fresh store")
 	var copy := store.duplicate_fighter(saved["id"])
 	_check(copy["payload"] == payload and copy["id"] != saved["id"], "Duplicating keeps bundled choices with a new fighter identity")
+	for base in [LibraryItem.SWORD, LibraryItem.HAMMER]:
+		var visual = load("res://weapons/weapon.tscn").instantiate()
+		root.add_child(visual)
+		visual.configure(base)
+		_check(is_equal_approx(visual.hit_player.volume_db, -5.0), "Original melee sound preserves -5 dB")
+		var custom_payload := payload.duplicate()
+		custom_payload["weapon_id"] = base.id
+		visual.configure(LibraryItem.weapon_for_payload(custom_payload))
+		_check(is_equal_approx(visual.hit_player.volume_db, -8.0), "Custom melee sound uses -8 dB")
+		visual.configure(base)
+		_check(is_equal_approx(visual.hit_player.volume_db, -5.0), "Returning to original sound restores scene volume")
+		var original_thrown = load("res://weapons/thrown_weapon.tscn").instantiate()
+		root.add_child(original_thrown)
+		original_thrown.configure(base, null, 1.0)
+		_check(is_equal_approx(original_thrown.hit_player.volume_db, -4.0), "Original thrown sound preserves -4 dB")
+		original_thrown.queue_free()
+		visual.queue_free()
 	var original_sound := LibraryItem.SWORD.hit_sound
 	var weapon := LibraryItem.weapon_for_payload(payload)
 	_check(weapon.hit_sound == AssetCatalog.ITEMS["kenney_metal_hit"]["resource"] and LibraryItem.SWORD.hit_sound == original_sound, "A custom sound does not change other fighters' weapons")
@@ -60,6 +77,7 @@ func _run() -> void:
 	await process_frame
 	game._show_library()
 	var panel: LibraryPanel = game.library_panel
+	_check(panel.editor_scroll.follow_focus, "Creator follows keyboard and controller focus")
 	panel._show_assets()
 	_check(panel.asset_cards.get_child_count() == 7, "All seven bundled assets appear in the Library")
 	await _picture("catalog")
@@ -78,6 +96,27 @@ func _run() -> void:
 	(card.get_child(card.get_child_count() - 1) as Button).pressed.emit()
 	_check(panel.editor.visible and panel._payload().get("hair_id") == "kenney_hair_short", "A bundled card starts a fighter with its selected hair")
 	panel.edit_fighter(loaded)
+	panel.editor_scroll.custom_minimum_size.y = 0
+	panel.editor_scroll.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	panel.editor_scroll.custom_minimum_size.y = 200
+	await process_frame
+	for action in ["ui_focus_next", "ui_down"]:
+		panel.name_field.grab_focus()
+		for step in 18:
+			var focused := root.gui_get_focus_owner()
+			if focused is Button and focused.text in ["Save Fighter", "Cancel"]:
+				await process_frame
+				await process_frame
+				_check(panel.editor_scroll.get_global_rect().encloses(focused.get_global_rect()), action + " reveals " + focused.text)
+				if focused.text == "Cancel":
+					break
+			var event := InputEventAction.new()
+			event.action = action
+			event.pressed = true
+			root.push_input(event)
+			await process_frame
+	panel.editor_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	panel.editor_scroll.custom_minimum_size.y = 0
 	_check(panel.preview.fighter.hair_id == payload["hair_id"], "The Creator preview shows saved imported hair")
 	_check(panel.preview.fighter.weapon.definition.hit_sound == weapon.hit_sound, "The Creator preview resolves the selected hit sound")
 	await _picture("creator")
@@ -110,6 +149,7 @@ func _run() -> void:
 	fighter._throw_or_pickup_weapon()
 	await process_frame
 	var thrown = get_nodes_in_group("world_weapons")[0]
+	_check(is_equal_approx(thrown.hit_player.volume_db, -8.0), "Custom thrown sound uses -8 dB")
 	_check(thrown.definition.hit_sound == AssetCatalog.ITEMS["kenney_wood_hit"]["resource"], "Throwing preserves the chosen hit sound")
 	thrown.pickup_delay_remaining = 0
 	thrown.global_position = fighter.global_position

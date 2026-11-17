@@ -85,3 +85,5 @@ This is a playable architecture and balancing prototype. Eight-player setup is i
 ## License
 
 No license has been selected for project-created code or artwork. All rights are reserved unless a license is added later. Selected third-party Kenney assets retain their CC0-1.0 license; original notices are included beside those assets under `assets/third_party/kenney/`.
+
+See the [changelog](CHANGELOG.md) and [project roadmap](https://docs.google.com/document/d/1QNaO7_r-jq0iHNmX0NvAtFn4yTtqDza7BmroskLLtSE/edit) for development history and planned milestones.

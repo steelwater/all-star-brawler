@@ -133,6 +133,7 @@ func _button(parent: Node, title: String, action: Callable) -> Button:
 
 func _build_editor() -> void:
 	editor_scroll = ScrollContainer.new()
+	editor_scroll.follow_focus = true
 	editor_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	content.add_child(editor_scroll)
 	editor = VBoxContainer.new()

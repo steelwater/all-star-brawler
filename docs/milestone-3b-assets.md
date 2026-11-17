@@ -1,7 +1,7 @@
 # All Star Brawler — Milestone 3B asset integration
 
 Date: 5 October 2026. Owner: Dan. Branch: `feature/milestone-3b-itch-asset-sourcing`.
-Status: implemented locally; awaiting Captain playtest and Uplink/review. No merge or release.
+Status: Testing / final review in [PR #5](https://github.com/steelwater/all-star-brawler/pull/5). Dan completed local playtesting without issues on 17 November 2026. No merge or release.
 
 Authority: [Milestone 3B Crew Brief](https://docs.google.com/document/d/1YgUONKqPHaWhjw0nWHumdzkbQ7sR5G262O36nuyazcg/edit), [Project Roadmap](https://docs.google.com/document/d/1QNaO7_r-jq0iHNmX0NvAtFn4yTtqDza7BmroskLLtSE/edit). Dan approved the recommended small Kenney selection on 5 October 2026.
 
@@ -77,11 +77,11 @@ Optional rendered evidence: create a destination directory and run `godot --path
 
 ## Remaining acceptance and rollback
 
-Captain playtest: F3 → Bundled Assets → select hair → name fighter → choose sound and Listen → Save → Use Fighter → Start Match. Verify keyboard/physical-controller navigation, subjective sound quality/volume and game feel, reload the game, then edit/duplicate the fighter. Audio decoding/playback initiation and rendered inspection do not establish subjective listening quality or physical-controller usability.
+Dan completed the general local playtest without issues (PR comment/screenshots, 17 November 2026). Focused follow-up navigation and sound regressions are checked separately. Reproduction flow: F3 → Bundled Assets → select hair → name fighter → choose sound and Listen → Save → Use Fighter → Start Match. Verify keyboard/physical-controller navigation, subjective sound quality/volume and game feel, reload the game, then edit/duplicate the fighter. Audio decoding/playback initiation and rendered inspection do not establish subjective listening quality or physical-controller usability.
 
-No separate lint/typecheck script, production export preset or configured CI workflow exists in this checkout. Godot import/script execution provides language validation; no production export, remote checks, PR, push, merge or release was performed. Uplink and required CI evaluation remain later work. Keep Milestone 3/3B open until review, merge and Captain playtesting meet the brief.
+No separate lint/typecheck script, production export preset or configured CI workflow exists in this checkout. Godot import/script execution provides language validation; no production export, merge or release was performed. PR #5 is open; no GitHub Actions checks are configured. Uplink and required CI evaluation remain later work. Keep Milestone 3/3B open until review, merge and Captain playtesting meet the brief.
 
-The feature branch is based on main `51731bf`. All implementation changes remain local and uncommitted. No save migration, deletion or reset occurred. Returning to the previous code leaves saves in place, but re-saving a customized fighter with old code would drop its new optional hair/sound fields; preserve saves before testing a rollback. Temporary complete archives remain in `/private/tmp/all-star-brawler-3b` only; selected licensed source files are the durable project content.
+The feature branch is based on main `51731bf`. Implementation is committed and pushed on PR #5; follow-up fixes remain on the same branch. No save migration, deletion or reset occurred. Returning to the previous code leaves saves in place, but re-saving a customized fighter with old code would drop its new optional hair/sound fields; preserve saves before testing a rollback. Temporary complete archives remain in `/private/tmp/all-star-brawler-3b` only; selected licensed source files are the durable project content.
 
 ## Prepared PR description
 
@@ -90,3 +90,12 @@ Title: Milestone 3B: Integrate curated Kenney assets into the Library
 The Library now browses seven licensed Kenney assets and lets players save hairstyles and weapon hit sounds with a fighter, preview them and use them in matches. A small non-colliding Arena scenery sample exercises the stage categories. Existing fighter records, combat values and source artwork are preserved.
 
 Uses original CC0 PNG/OGG files from three official packs, with original notices and a central source/hash manifest. Other purchased candidates and their deferral reasons are recorded above. Verification: 136 combat, 34 Library and 54 asset assertions; rendered desktop inspection. Remaining limits: Captain listening/controller/game-feel acceptance, no production export or remote CI run. No new dependencies or general creator subsystems.
+
+
+## Review follow-up — 17 November 2026
+
+Creator scrolling follows keyboard/controller focus. Original weapon sounds preserve scene playback levels: melee -5 dB, thrown -4 dB. Kenney overrides remain -8 dB. Added regression coverage and CHANGELOG.md.
+
+Roadmap direction approved 17 November 2026: each purchased/imported pack may define its own coherent arena/playset theme. Visual consistency is required within an arena, not across the entire game. Top-down/map art may be composed as background/foreground scenery rather than literal side-view collision geometry. Heroic Overworld → Highland Overlook is the reference: battle on a high mountain ridge with a fantasy country visible below. Earlier perspective/style deferrals above describe this initial seven-file selection, not permanent exclusions. Reassess those packs under this direction after license review. Full Stage Builder remains Milestone 4; 3B remains license-safe sourcing, metadata, Library integration and representative use.
+
+Follow-up verification: Godot 4.7.2 combat 136, Library 34, expanded assets 67 assertions passed. Focus regression constrains the Creator viewport and exercises Tab/down actions; Save/Cancel visibility and original/custom melee/thrown volumes are covered. Rendered focused suite also runs at 960×540. Physical controller and subjective listening were not repeated; Dan’s earlier playtest remains recorded.
