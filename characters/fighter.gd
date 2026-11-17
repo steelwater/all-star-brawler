@@ -32,6 +32,7 @@ const DAMAGE_FLASH_COLOR := Color("b00020")
 @export_range(1, 8) var team_id := 1
 @export var fighter_color := Color("4dabf7")
 @export var starting_weapon: WeaponDefinition
+var hair_id := ""
 @export var block_sound: AudioStream
 
 @onready var weapon_mount: Node2D = $WeaponMount
@@ -308,6 +309,7 @@ func _draw() -> void:
 			draw_line(Vector2(-14, -24), Vector2(-32, 4), body_color, 10.0)
 			if weapon == null:
 				draw_line(Vector2(14, -24), Vector2(32, 4), body_color, 10.0)
+	_draw_hair()
 	if is_defending:
 		var shield_angle := 0.0 if facing > 0.0 else PI
 		draw_arc(Vector2(facing * 20, -18), DEFENSE_ARC_RADIUS, shield_angle - 0.75, shield_angle + 0.75, 18, Color(1, 1, 1, 0.65), 4.0)
@@ -333,3 +335,21 @@ func _draw_crouching_kick_pose(body_color: Color) -> void:
 	draw_rect(Rect2(-25, 20, 50, 26), body_color)
 	draw_line(Vector2(facing * -15, 24), Vector2(facing * -36, 43), body_color, 10.0)
 	draw_line(Vector2(facing * 12, 34), Vector2(facing * 58, 34), body_color.lightened(0.12), 14.0)
+
+
+func hair_head_position() -> Vector2:
+	if kick_flash_remaining > 0.0:
+		return Vector2(facing * -8, 7) if is_crouching else Vector2(facing * -18, -52)
+	return Vector2(0, 8) if is_crouching else Vector2(0, -54)
+
+
+func _draw_hair() -> void:
+	if hair_id.is_empty():
+		return
+	var item: Dictionary = AssetCatalog.ITEMS[hair_id]
+	var tint := DAMAGE_FLASH_COLOR if is_damage_blink_visible() else Color.WHITE
+	if is_defending:
+		tint = tint.darkened(0.4)
+	draw_set_transform(hair_head_position(), 0, Vector2(facing, 1))
+	draw_texture_rect(item["resource"], item["head_rect"], false, tint)
+	draw_set_transform(Vector2.ZERO)

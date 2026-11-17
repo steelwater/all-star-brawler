@@ -140,6 +140,7 @@ func _spawn_fighter(slot: FighterSlotConfig, spawn_position: Vector2) -> void:
 	fighter.team_id = slot.team_id
 	fighter.fighter_color = slot.fighter_color
 	fighter.starting_weapon = slot.starting_weapon
+	fighter.hair_id = slot.hair_id
 	fighter.match_manager = match_manager
 	fighter.health_changed.connect(_on_health_changed)
 	fighter.defeated_changed.connect(_on_fighter_defeated.bind(fighter))
@@ -429,6 +430,7 @@ func _apply_setup() -> void:
 			slot_configs[index].character_id = &"prototype_fighter"
 			slot_configs[index].fighter_color = FIGHTER_COLORS[index]
 			slot_configs[index].starting_weapon = SWORD if index % 2 == 0 else HAMMER
+			slot_configs[index].hair_id = ""
 		else:
 			LibraryItem.apply_to_slot(pending_fighters[index], slot_configs[index])
 		slot_configs[index].control_type = pending_controls[index]

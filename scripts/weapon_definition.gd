@@ -9,6 +9,8 @@ extends Resource
 @export var damage := 10.0
 @export var knockback := 360.0
 @export var hit_sound: AudioStream
+# NAN preserves each playback scene's original volume when no override is selected.
+@export var hit_volume_db := NAN
 @export var attack_size := Vector2(80, 72)
 @export var attack_offset := 62.0
 @export var attack_range := 92.0

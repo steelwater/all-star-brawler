@@ -41,3 +41,14 @@ Milestone 3 imports, weapons/armor authoring, tagging/search, stage building, cl
 ## Review and rollback
 
 Work is isolated on the feature branch. No merge, deployment, release or user-save migration is performed. The base `main` remains the rollback point. Returning to the base code leaves Library records in `user://` untouched for later use. Keep the PR draft until the remaining playtest acceptance checks are complete.
+
+
+## Milestone 3B extension — 5 October 2026
+
+The version-1 fighter payload now accepts optional `hair_id` and `hit_sound_id`. Missing/empty IDs mean no hair and the original weapon sound. Older three-field records continue unchanged. Unknown, wrong-category, non-string, and file-path choices are rejected at the saved-data boundary. Saving cleared choices omits the optional keys.
+
+`AssetCatalog` is the single curated bundled manifest, with preloaded resources, categories/tags, original filenames, dimensions, hashes, creator, source URL, acquisition method, license, attribution and redistribution notes. It is packaged project content, separate from `LibraryStore` player-created records. No arbitrary user file can become a resource path. Future general importing remains out of scope.
+
+A slot snapshots hair and a duplicated weapon resource for customized sound. The duplicate retains all damage/timing values and travels with thrown/picked-up equipment; other fighters and built-in weapons are unaffected. Hair follows the existing head positions and facing in standing, crouching and kicking poses. Arena scenery references catalog IDs and adds no collision.
+
+The bundled browser offers category and name/tag filtering, visual previews, audio audition and shortcuts into the existing Fighter Creator. See [selection, verification, limitations and rollback](milestone-3b-assets.md).

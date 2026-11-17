@@ -12,8 +12,8 @@ config_version=5
 
 config/name="All Star Brawler"
 config/version="0.1.0-dev"
-config/features=PackedStringArray("4.7")
 run/main_scene="res://main.tscn"
+config/features=PackedStringArray("4.7")
 
 [display]
 

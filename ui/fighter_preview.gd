@@ -31,5 +31,6 @@ func _ready() -> void:
 
 func show_payload(payload: Dictionary) -> void:
 	fighter.fighter_color = Color(payload["color"])
-	fighter.equip_weapon(LibraryItem.weapon_for(payload["weapon_id"]))
+	fighter.hair_id = payload.get("hair_id", "")
+	fighter.equip_weapon(LibraryItem.weapon_for_payload(payload))
 	fighter.queue_redraw()

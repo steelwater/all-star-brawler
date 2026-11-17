@@ -15,6 +15,7 @@ enum CpuDifficulty {
 
 @export_range(1, 8) var slot_id := 1
 @export var library_fighter_id := ""
+@export var hair_id := ""
 @export var character_id: StringName = &"prototype_fighter"
 @export var starting_weapon: WeaponDefinition
 @export var control_type := ControlType.DISABLED

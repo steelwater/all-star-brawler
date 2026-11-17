@@ -12,6 +12,8 @@ const HAMMER_SWING_END := 0.45
 @onready var hit_shape: CollisionShape2D = $HitArea/CollisionShape2D
 @onready var hit_player: AudioStreamPlayer = $HitPlayer
 
+@onready var original_hit_volume_db: float = $HitPlayer.volume_db
+
 var cooldown_remaining := 0.0
 var attack_flash_remaining := 0.0
 
@@ -61,6 +63,7 @@ func _apply_definition() -> void:
 	hit_shape.shape = rectangle
 	hit_area.position.x = definition.attack_offset
 	hit_player.stream = definition.hit_sound
+	hit_player.volume_db = original_hit_volume_db if is_nan(definition.hit_volume_db) else definition.hit_volume_db
 
 
 func _update_attack_pose() -> void:
