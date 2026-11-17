@@ -9,6 +9,7 @@ extends Resource
 @export var damage := 10.0
 @export var knockback := 360.0
 @export var hit_sound: AudioStream
+@export var hit_volume_db := 0.0
 @export var attack_size := Vector2(80, 72)
 @export var attack_offset := 62.0
 @export var attack_range := 92.0

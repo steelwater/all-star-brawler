@@ -24,6 +24,10 @@ static func valid_payload(value: Variant) -> bool:
 		return false
 	if value.get("character_id") != "prototype_fighter" or not value.get("weapon_id") in ["sword", "hammer"]:
 		return false
+	if not AssetCatalog.valid_choice(value.get("hair_id", ""), "Fighter Parts"):
+		return false
+	if not AssetCatalog.valid_choice(value.get("hit_sound_id", ""), "Sounds"):
+		return false
 	var color: Variant = value.get("color")
 	if not color is String or color.length() != 6:
 		return false
@@ -56,4 +60,17 @@ static func apply_to_slot(record: Dictionary, slot: FighterSlotConfig) -> void:
 	slot.library_fighter_id = record["id"]
 	slot.character_id = StringName(payload["character_id"])
 	slot.fighter_color = Color(payload["color"])
-	slot.starting_weapon = weapon_for(payload["weapon_id"])
+	slot.hair_id = payload.get("hair_id", "")
+	slot.starting_weapon = weapon_for_payload(payload)
+
+
+static func weapon_for_payload(payload: Dictionary) -> WeaponDefinition:
+	var base := weapon_for(payload["weapon_id"])
+	var sound_id: String = payload.get("hit_sound_id", "")
+	if sound_id.is_empty():
+		return base
+	# Each fighter owns its sound override; built-in resources stay unchanged.
+	var customized := base.duplicate() as WeaponDefinition
+	customized.hit_sound = AssetCatalog.ITEMS[sound_id]["resource"]
+	customized.hit_volume_db = -8.0
+	return customized

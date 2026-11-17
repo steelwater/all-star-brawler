@@ -32,6 +32,7 @@ func configure(new_definition: WeaponDefinition, new_thrower: Fighter, facing: f
 	visual.configure(definition)
 	visual.hit_area.monitoring = false
 	hit_player.stream = definition.hit_sound
+	hit_player.volume_db = definition.hit_volume_db
 	var rectangle := RectangleShape2D.new()
 	rectangle.size = Vector2(maxf(28.0, definition.visual_size.x), maxf(16.0, definition.visual_size.y))
 	collision_shape.shape = rectangle

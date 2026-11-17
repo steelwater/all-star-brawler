@@ -16,7 +16,7 @@ The prototype uses **Godot 4.7.2 stable** and **GDScript**. It includes:
 - An eight-spawn test arena and safe fallback spawns for stages with fewer authored points
 - A moving Freeway stage whose road drains health
 
-General asset importing, armor, stage creation, networking, progression, mobile controls, and production packaging remain outside this prototype.
+General user-file importing, armor, stage creation, networking, progression, mobile controls, and production packaging remain outside this prototype. A curated set of seven CC0 Kenney assets is bundled with the Library.
 
 ## Run the prototype
 
@@ -32,9 +32,11 @@ Only two local human input maps exist in this prototype. Match Setup restricts F
 
 Click **Library (F3)** or press `F3` to open the collection. Controller Menu/Start also opens it; D-pad, confirm (bottom face button), and back (right face button) operate menus. Fighter names still use keyboard text entry. This does not add gamepad combat or additional human input maps.
 
-Choose **Create Fighter**, enter a name, pick one of the existing eight colors and either Sword or Hammer, then **Save Fighter**. Use **Edit**, **Copy**, or **Delete** on a fighter card. Unsaved edits and deletion require confirmation.
+Choose **Create Fighter**, enter a name, pick one of the existing eight colors and either Sword or Hammer, optionally choose **Hair** and a **Hit sound**, then **Save Fighter**. **Listen** auditions the sound. **Bundled Assets** browses the included assets by category or name/tag; its fighter-part and sound cards can start a new fighter with that choice. Use **Edit**, **Copy**, or **Delete** on a fighter card. Unsaved edits and deletion require confirmation.
 
 Choose a target slot and **Use Fighter**, then set Human/CPU, difficulty and team in Match Setup before **Start Match**. Each slot also has a character selector. The same saved fighter can occupy multiple slots. Editing affects the next match selection; current matches retain their configuration. Deleting a selected record leaves a running match intact and returns its menu choice to Prototype Fighter.
+
+The Arena displays a non-colliding hills, castle, and tree sample from the bundled catalog. Source licenses, exact file hashes, categories, and tags live in `scripts/asset_catalog.gd`; see [Milestone 3B integration and verification](docs/milestone-3b-assets.md).
 
 Records live in Godot's `user://library/items` directory and survive game restarts. They are separate from packaged resources and Git. See [Library architecture and verification](docs/library-system.md).
 
@@ -71,6 +73,7 @@ Run the focused headless test from the repository root:
 ```sh
 godot --headless --path . --script res://tests/smoke_test.gd
 godot --headless --path . --script res://tests/library_test.gd
+godot --headless --path . --script res://tests/asset_test.gd --fixed-fps 60
 ```
 
 It covers the legacy combat moves, shared controller path, difficulty profiles, CPU-only combat, team-aware damage and targeting, friendly fire, team victory, 4-player, 3-vs-3, and 8-player configurations, plus authored and fallback spawns.
@@ -81,4 +84,4 @@ This is a playable architecture and balancing prototype. Eight-player setup is i
 
 ## License
 
-No license has been selected. All rights are reserved unless a license is added later.
+No license has been selected for project-created code or artwork. All rights are reserved unless a license is added later. Selected third-party Kenney assets retain their CC0-1.0 license; original notices are included beside those assets under `assets/third_party/kenney/`.

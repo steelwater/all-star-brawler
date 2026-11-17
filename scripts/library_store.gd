@@ -68,6 +68,10 @@ func save_fighter(title: String, payload: Dictionary, id: String = "") -> Dictio
 	record["modified_at"] = int(Time.get_unix_time_from_system())
 	# Explicit fighter fields keep match settings out of persistent identity.
 	record["payload"] = {"character_id": payload["character_id"], "color": payload["color"], "weapon_id": payload["weapon_id"]}
+	# Optional additions preserve existing version-1 saves without a migration.
+	for key in ["hair_id", "hit_sound_id"]:
+		if not payload.get(key, "").is_empty():
+			record["payload"][key] = payload[key]
 	if FileAccess.file_exists(directory) or DirAccess.make_dir_recursive_absolute(directory) != OK:
 		last_error = "There is no room to save here. Please check your storage and try again."
 		return {}

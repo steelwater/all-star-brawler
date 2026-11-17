@@ -46,4 +46,8 @@ func _draw() -> void:
 		var height := 90.0 + float((index * 53) % 170)
 		var x := float(index) * 118.0 - 30.0
 		draw_rect(Rect2(x, 360.0 - height, width, height + 250.0), Color("1f2b41"))
+	# Bundled Library scenery stays behind fighters and does not alter collision.
+	draw_texture_rect(AssetCatalog.ITEMS["kenney_hills"]["resource"], Rect2(0, 340, 1280, 224), false, Color("33455b"))
+	draw_texture_rect(AssetCatalog.ITEMS["kenney_castle"]["resource"], Rect2(542, 384, 196, 174), false, Color(0.55, 0.6, 0.7))
+	draw_texture_rect(AssetCatalog.ITEMS["kenney_tree"]["resource"], Rect2(350, 452, 55, 106), false, Color(0.65, 0.65, 0.7))
 	draw_string(ThemeDB.fallback_font, Vector2(48, 96), "ARENA TEST", HORIZONTAL_ALIGNMENT_LEFT, -1, 28, Color(1, 1, 1, 0.72))

@@ -61,6 +61,7 @@ func _apply_definition() -> void:
 	hit_shape.shape = rectangle
 	hit_area.position.x = definition.attack_offset
 	hit_player.stream = definition.hit_sound
+	hit_player.volume_db = definition.hit_volume_db
 
 
 func _update_attack_pose() -> void:
